@@ -10,7 +10,7 @@ export default function Home() {
     
     // Mouse trailing logic
     let mx=-300, my=-300, rx=-300, ry=-300
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent ) => {
       mx = e.clientX; 
       my = e.clientY;
       if (d) { d.style.left = mx + 'px'; d.style.top = my + 'px'; }
