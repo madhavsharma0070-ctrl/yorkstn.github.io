@@ -1,3 +1,4 @@
+'use client'
 import Footer from '@/components/Footer'
 const articles = [
   {ft:true,cat:'IBEF Case Study · March 2025',read:'3–4 min',title:'Affordable Luxury: Understanding Premiumisation and Evolving Consumer Preferences in India',excerpt:"Published by the India Brand Equity Foundation, this case study explains how India's shift toward premium consumption is structural and long-term.",src:'India Brand Equity Foundation · Free',url:'https://www.ibef.org/research/case-study/affordable-luxury-understanding-premiumisation-and-evolving-consumer-preferences'},
