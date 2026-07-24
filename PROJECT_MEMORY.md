@@ -14,8 +14,8 @@ A technology-first Market Entry Operating System (SaaS + optional managed servic
 |---|---|---|
 | Phase 1 — Research | ✅ Complete | `research/*.md` (4 reports), synthesized in `BLUEPRINT.md` |
 | Phase 2 — Product & architecture design | ✅ Complete (20/20 docs) | `docs/phase2/*.md` |
-| Phase 3 — Per-module engineering specs | ⏳ Not started | will live in `docs/phase3/*.md` |
-| Phase 4 — Implementation (production MVP) | ⏳ Not started | will live in `yorkstn/` (existing Next.js app) |
+| Phase 3 — Per-module engineering specs | ✅ Complete (4/4 specs) | `docs/phase3/*.md` |
+| Phase 4 — Implementation (production MVP) | 🔄 In progress | `yorkstn/` (existing Next.js app) |
 
 ## 2. Phase 1 — Research (complete)
 
@@ -42,15 +42,13 @@ PRD, USER_STORIES, PERSONAS, INFORMATION_ARCHITECTURE, FEATURE_SPECIFICATIONS, A
 **Key architecture decisions already locked (see `DECISIONS.md` for full list D-01 through D-17):**
 - Modular monolith inside the existing Next.js repo (D-06, D-07), Tailwind scoped to new platform routes only (D-08), Prisma + Postgres/SQLite (D-09), NextAuth.js Credentials+JWT (D-10), enum-based RBAC (D-03), AI service layer provider-agnostic with a mock default — **no real LLM key required for a functional MVP** (D-11), deterministic features (Readiness Score, Entity Formation recommendation, Site Selection scoring) are never LLM-generated (D-04).
 
-## 4. Phase 3 — Next action
+## 4. Phase 3 — Complete
 
-**Not yet started.** Per the user's instruction: "Design the production architecture for every module and generate all engineering documentation required for implementation."
+4 engineering specs in `docs/phase3/`: `ai-market-intelligence-engineering-spec.md`, `compliance-operating-system-engineering-spec.md`, `partner-discovery-engineering-spec.md`, `retail-expansion-intelligence-engineering-spec.md`. Each defines: exact `lib/modules/<name>/` internal file structure, which Prisma models the module owns (vs. reads cross-module via exported functions only — never raw cross-module Prisma queries, a hard rule established in these specs), exact API routes owned, and a test plan. The three deterministic-feature purity rules (Readiness Score, Entity Formation recommendation, Site Selection scoring — all pure functions, no I/O/AI calls, versioned) are consistently cross-referenced across all 4 specs from `DECISIONS.md` D-04.
 
-Plan (adjust if reality diverges once started): write `docs/phase3/<module>-engineering-spec.md` for each of the 4 MVP modules (ai-market-intelligence, compliance-operating-system, partner-discovery, retail-expansion-intelligence), each going one level deeper than Phase 2's system-wide architecture docs into module-specific implementation detail (exact component/service boundaries within the modular monolith, exact Prisma models touched, exact API routes owned, test plan). Phase 2's `SYSTEM_ARCHITECTURE.md`, `AI_ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, and `API_SPECIFICATION.md` are the inputs — Phase 3 should not re-derive or contradict them, only add implementation-level depth plus a migration/build-order plan (which can mostly reuse `MVP_ROADMAP.md`'s milestone sequencing rather than re-deriving it).
+## 5. Phase 4 — Implementation (in progress)
 
-## 5. Phase 4 — Next action (after Phase 3)
-
-**Not yet started.** Repo audit for Phase 4 is already done (see `docs/phase3/` once written, and the audit findings below) — do not repeat it.
+Repo audit already done (§ below) — do not repeat it. Follow `docs/phase2/MVP_ROADMAP.md` milestone order; check off `TODO.md` as each lands.
 
 **Existing repo audit findings (already gathered, do not re-audit):**
 - `yorkstn/` is a Next.js 14.2.35 App Router site, TypeScript strict, React 18, ESLint, no Tailwind, no ORM, no auth, no test framework yet.

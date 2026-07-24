@@ -2,15 +2,7 @@
 
 Live action tracker. Check items off as completed; the first unchecked item is where the next session should resume (per `PROJECT_MEMORY.md` §6). Keep this file honest — do not check something off before it's actually done and committed.
 
-## Phase 3 — Per-module engineering specs (next up)
-
-- [ ] `docs/phase3/ai-market-intelligence-engineering-spec.md`
-- [ ] `docs/phase3/compliance-operating-system-engineering-spec.md`
-- [ ] `docs/phase3/partner-discovery-engineering-spec.md`
-- [ ] `docs/phase3/retail-expansion-intelligence-engineering-spec.md`
-- [ ] Update `PROJECT_MEMORY.md` §1 (phase status table) and `CHANGELOG.md` once Phase 3 is complete.
-
-## Phase 4 — Implementation (after Phase 3)
+## Phase 4 — Implementation (in progress)
 
 Following `docs/phase2/MVP_ROADMAP.md` / `docs/phase2/MILESTONES.md` sequencing:
 
@@ -36,3 +28,4 @@ Following `docs/phase2/MVP_ROADMAP.md` / `docs/phase2/MILESTONES.md` sequencing:
 - [x] Phase 2 — Product & Architecture Design (20/20 docs in `docs/phase2/`).
 - [x] Top-level tracking docs created: `PROJECT_MEMORY.md`, `DECISIONS.md`, `CHANGELOG.md`, `TODO.md`, `BLUEPRINT.md` §8 addendum.
 - [x] Existing `yorkstn/` Next.js repo audited for Phase 4 reuse/migration planning.
+- [x] Phase 3 — Per-module engineering specs (4/4 in `docs/phase3/`).

@@ -2,6 +2,12 @@
 
 All notable changes to the Yorkstn project (research, product/architecture design, and implementation) are recorded here, most recent first. This complements `git log` with phase-level context; it does not replace commit messages.
 
+## Phase 3 — Per-Module Engineering Specs (2026-07-24)
+
+- Added `docs/phase3/ai-market-intelligence-engineering-spec.md`, `compliance-operating-system-engineering-spec.md`, `partner-discovery-engineering-spec.md`, `retail-expansion-intelligence-engineering-spec.md`.
+- Each spec defines internal `lib/modules/<name>/` file structure, Prisma model ownership, owned API routes, and a test plan, without re-deriving Phase 2's architecture decisions.
+- Established the cross-module read rule: any module reading another module's data does so only through that module's exported read-only functions, never raw cross-module Prisma queries — critical for `dashboard-aggregation.service.ts` (Retail Expansion Intelligence), which is the one service whose primary job is composing reads across all four modules.
+
 ## Phase 2 — Product & Architecture Design (2026-07-24)
 
 - Added `DECISIONS.md`, `PROJECT_MEMORY.md`, this `CHANGELOG.md`, and `TODO.md` as the project's top-level tracking documents.
