@@ -1,0 +1,615 @@
+// Yorkstn platform data model.
+// Source of truth for design: /docs/phase2/DATABASE_SCHEMA.md and /docs/phase2/ERD.md.
+//
+// ENGINEERING DECISION (Phase 4, not in the Phase 2 docs — logged in /DECISIONS.md D-18):
+// Prisma's native `enum` type is unsupported on SQLite (our local-dev provider per
+// TECH_STACK.md's SQLite-dev/Postgres-prod decision). Every field that DATABASE_SCHEMA.md
+// models as a Postgres ENUM is implemented here as `String`, with the closed set of allowed
+// values enforced by Zod schemas in `lib/validation/enums.ts` at every API boundary — this
+// preserves the exact same closed-value-set guarantee, just enforced in the application layer
+// instead of the DB engine, consistent with API_SPECIFICATION.md's existing "Zod at the
+// boundary" convention. Postgres `text[]` array columns are modeled as `Json` for the same
+// SQLite-portability reason (DATABASE_SCHEMA.md's `assumptions text[]` etc.).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// 1. Identity & Tenancy
+// ============================================================
+
+model Organization {
+  id               String    @id @default(uuid())
+  name             String
+  slug             String    @unique
+  homeCountry      String
+  subscriptionTier String    @default("starter") // starter | growth | scale
+  billingStatus    String    @default("trialing") // trialing | active | past_due | canceled
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  brandProfile              BrandProfile?
+  memberships               Membership[]
+  invitations               Invitation[]
+  staffAssignments          StaffOrgAssignment[]
+  products                  Product[]
+  aiInsights                AiInsight[]
+  readinessScores           ExpansionReadinessScore[]
+  complianceCase            ComplianceCase?
+  documents                 Document[]
+  sites                     Site[]
+  siteScoringConfig         SiteScoringConfig?
+  expansionRoadmap          ExpansionRoadmap?
+  financialProjections      FinancialProjection[]
+  launchTasks               LaunchTask[]
+  managedServiceEngagements ManagedServiceEngagement[]
+  introductionRequests      IntroductionRequest[]
+  auditLogs                 AuditLog[]
+
+  @@map("organizations")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String?
+  name            String
+  userType        String // org_user | yorkstn_staff | partner
+  isPlatformAdmin Boolean   @default(false)
+  partnerId       String?   @unique
+  partner         Partner?  @relation("PartnerContact", fields: [partnerId], references: [id])
+  emailVerifiedAt DateTime?
+  imageUrl        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  memberships          Membership[]
+  invitationsSent      Invitation[]          @relation("InvitedBy")
+  staffAssignments     StaffOrgAssignment[]
+  aiInsightsRequested  AiInsight[]
+  documentsUploaded    Document[]
+  partnerVerifications PartnerVerification[]
+  introductionRequests IntroductionRequest[]
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+
+  @@map("users")
+}
+
+model Membership {
+  id              String   @id @default(uuid())
+  userId          String
+  organizationId  String
+  role            String // owner | admin | compliance_manager | analyst_editor | viewer
+  status          String   @default("active") // active | suspended
+  invitedByUserId String?
+  joinedAt        DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("memberships")
+}
+
+model Invitation {
+  id              String    @id @default(uuid())
+  organizationId  String
+  email           String
+  role            String
+  invitedByUserId String
+  token           String    @unique
+  status          String    @default("pending") // pending | accepted | expired | revoked
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  invitedBy    User         @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+
+  @@index([organizationId, email])
+  @@map("invitations")
+}
+
+model StaffOrgAssignment {
+  id             String   @id @default(uuid())
+  userId         String
+  organizationId String
+  scope          String   @default("full") // compliance | partner_verification | full
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@map("staff_org_assignments")
+}
+
+model BrandProfile {
+  id                   String   @id @default(uuid())
+  organizationId       String   @unique
+  category             String // fashion | lifestyle | kids | beauty_personal_care | home_living | specialty
+  subCategory          String?
+  priceTier            String // mass | mid | premium | luxury
+  homeMarketPriceRange Json? // {min, max, currency}
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("brand_profiles")
+}
+
+model Product {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  hsnCode        String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([hsnCode])
+  @@map("products")
+}
+
+// ============================================================
+// 2. AI Market Intelligence
+// ============================================================
+
+model AiInsight {
+  id                String   @id @default(uuid())
+  organizationId    String
+  category          String // market_analysis | consumer_insights | competitor_intelligence | pricing_intelligence | demand_forecast | city_recommendation
+  cityId            String?
+  inputParams       Json
+  summary           String
+  confidence        String // high | medium | low | insufficient_data
+  structuredOutput  Json
+  assumptions       Json? // nullable, not @default (see DECISIONS.md D-22 re: Json defaults on SQLite); app code treats null as []
+  methodologyNote   String?
+  generatedAt       DateTime
+  modelVersion      String
+  requestedByUserId String?
+  createdAt         DateTime @default(now())
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  city         City?             @relation(fields: [cityId], references: [id])
+  requestedBy  User?             @relation(fields: [requestedByUserId], references: [id])
+  sources      AiInsightSource[]
+
+  @@index([organizationId, category, generatedAt])
+  @@map("ai_insights")
+}
+
+model AiInsightSource {
+  id            String   @id @default(uuid())
+  aiInsightId   String
+  title         String
+  url           String?
+  retrievedDate DateTime
+
+  aiInsight AiInsight @relation(fields: [aiInsightId], references: [id], onDelete: Cascade)
+
+  @@index([aiInsightId])
+  @@map("ai_insight_sources")
+}
+
+model ExpansionReadinessScore {
+  id                String   @id @default(uuid())
+  organizationId    String
+  score             Int
+  inputsSnapshot    Json
+  ruleEngineVersion String
+  calculatedAt      DateTime @default(now())
+
+  organization Organization           @relation(fields: [organizationId], references: [id])
+  drivers      ReadinessScoreDriver[]
+
+  @@index([organizationId, calculatedAt])
+  @@map("expansion_readiness_scores")
+}
+
+model ReadinessScoreDriver {
+  id               String @id @default(uuid())
+  readinessScoreId String
+  driverName       String
+  pointsEarned     Float
+  pointsPossible   Float
+
+  readinessScore ExpansionReadinessScore @relation(fields: [readinessScoreId], references: [id], onDelete: Cascade)
+
+  @@index([readinessScoreId])
+  @@map("readiness_score_drivers")
+}
+
+// ============================================================
+// 3. Compliance Operating System
+// ============================================================
+
+model ComplianceCase {
+  id             String   @id @default(uuid())
+  organizationId String   @unique
+  createdAt      DateTime @default(now())
+
+  organization  Organization             @relation(fields: [organizationId], references: [id])
+  workflowItems ComplianceWorkflowItem[]
+
+  @@map("compliance_cases")
+}
+
+model ComplianceWorkflowItem {
+  id                    String    @id @default(uuid())
+  complianceCaseId      String
+  workflowType          String // entity_formation | import_compliance | gst | bis | trademark_ip
+  title                 String
+  status                String    @default("pending") // pending | in_progress | blocked | completed | not_applicable
+  dueAt                 DateTime?
+  payload               Json? // nullable, not @default — see DECISIONS.md D-22
+  recommendedEntityType String? // wos | jv | llp | branch | liaison | project_office
+  entityRationale       String?
+  ruleEngineVersion     String?
+  contentSourceUrl      String?
+  contentLastVerifiedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  complianceCase            ComplianceCase             @relation(fields: [complianceCaseId], references: [id])
+  managedServiceEngagements ManagedServiceEngagement[]
+
+  @@index([complianceCaseId, status, dueAt])
+  @@map("compliance_workflow_items")
+}
+
+model Document {
+  id               String   @id @default(uuid())
+  organizationId   String
+  attachedToType   String // compliance_workflow_item | partner_verification
+  attachedToId     String
+  documentType     String // certificate | filing | poa | correspondence | verification_document | other
+  documentGroupId  String
+  uploadedByUserId String
+  createdAt        DateTime @default(now())
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  uploadedBy   User              @relation(fields: [uploadedByUserId], references: [id])
+  versions     DocumentVersion[]
+
+  @@index([attachedToType, attachedToId, documentGroupId])
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id            String   @id @default(uuid())
+  documentId    String
+  versionNumber Int      @default(1)
+  fileUrl       String
+  fileName      String
+  mimeType      String
+  sizeBytes     Int
+  createdAt     DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id])
+
+  @@index([documentId, versionNumber])
+  @@map("document_versions")
+}
+
+// ============================================================
+// 4. Partner Discovery
+// ============================================================
+
+model Partner {
+  id                 String    @id @default(uuid())
+  category           String // manufacturer | franchise | retail_distributor | mall_operator | cre | logistics | warehousing | marketing_agency | legal
+  businessName       String
+  description        String?
+  capacityAttributes Json? // nullable, not @default — see DECISIONS.md D-22
+  verificationStatus String    @default("unverified") // unverified | pending | verified
+  contactChannel     String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  contactUser          User?                 @relation("PartnerContact")
+  cities               PartnerCity[]
+  references           PartnerReference[]
+  verifications        PartnerVerification[]
+  introductionRequests IntroductionRequest[]
+  sites                Site[]
+
+  @@index([category, verificationStatus])
+  @@map("partners")
+}
+
+model PartnerCity {
+  partnerId String
+  cityId    String
+
+  partner Partner @relation(fields: [partnerId], references: [id])
+  city    City    @relation(fields: [cityId], references: [id])
+
+  @@id([partnerId, cityId])
+  @@index([cityId])
+  @@map("partner_cities")
+}
+
+model PartnerReference {
+  id               String   @id @default(uuid())
+  partnerId        String
+  referenceName    String
+  referenceContact String?
+  note             String?
+  createdAt        DateTime @default(now())
+
+  partner Partner @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId])
+  @@map("partner_references")
+}
+
+model PartnerVerification {
+  id               String    @id @default(uuid())
+  partnerId        String
+  status           String    @default("pending") // pending | approved | rejected
+  submittedAt      DateTime  @default(now())
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  rejectionReason  String?
+
+  partner    Partner @relation(fields: [partnerId], references: [id])
+  reviewedBy User?   @relation(fields: [reviewedByUserId], references: [id])
+
+  @@index([partnerId])
+  @@index([status])
+  @@map("partner_verifications")
+}
+
+model IntroductionRequest {
+  id                String    @id @default(uuid())
+  organizationId    String
+  partnerId         String
+  requestedByUserId String
+  context           String?
+  status            String    @default("sent") // sent | partner_viewed | accepted | declined
+  respondedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  partner      Partner      @relation(fields: [partnerId], references: [id])
+  requestedBy  User         @relation(fields: [requestedByUserId], references: [id])
+
+  @@index([organizationId, status])
+  @@index([partnerId, status])
+  @@map("introduction_requests")
+}
+
+// ============================================================
+// 5. Retail Expansion Intelligence
+// ============================================================
+
+model City {
+  id                      String    @id @default(uuid())
+  name                    String
+  state                   String
+  tier                    String? // tier1 | tier2 | tier3
+  population              Int?
+  demographics            Json? // nullable, not @default — see DECISIONS.md D-22
+  realEstateCostBenchmark Json?
+  distributionMaturity    Json?
+  lastVerifiedAt          DateTime?
+  sourceUrl               String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  malls         Mall[]
+  sites         Site[]
+  partnerCities PartnerCity[]
+  aiInsights    AiInsight[]
+
+  @@unique([name, state])
+  @@index([state])
+  @@map("cities")
+}
+
+model Mall {
+  id                     String    @id @default(uuid())
+  cityId                 String
+  name                   String
+  tenantMix              Json? // nullable, not @default — see DECISIONS.md D-22
+  leaseBenchmark         Json?
+  footfallProxyIndicator String?
+  lastVerifiedAt         DateTime?
+  sourceUrl              String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  city  City   @relation(fields: [cityId], references: [id])
+  sites Site[]
+
+  @@index([cityId])
+  @@map("malls")
+}
+
+model Site {
+  id             String   @id @default(uuid())
+  organizationId String
+  cityId         String
+  mallId         String?
+  crePartnerId   String?
+  name           String
+  address        String?
+  attributes     Json? // nullable, not @default — see DECISIONS.md D-22
+  status         String   @default("candidate") // candidate | shortlisted | rejected | selected
+  computedScore  Float?
+  scoreBreakdown Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  city         City         @relation(fields: [cityId], references: [id])
+  mall         Mall?        @relation(fields: [mallId], references: [id])
+  crePartner   Partner?     @relation(fields: [crePartnerId], references: [id])
+
+  @@index([organizationId, status])
+  @@index([cityId])
+  @@map("sites")
+}
+
+model SiteScoringConfig {
+  id             String   @id @default(uuid())
+  organizationId String   @unique
+  weights        Json
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("site_scoring_configs")
+}
+
+model ExpansionRoadmap {
+  id             String   @id @default(uuid())
+  organizationId String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id])
+  milestones   RoadmapMilestone[]
+
+  @@map("expansion_roadmaps")
+}
+
+model RoadmapMilestone {
+  id                   String   @id @default(uuid())
+  expansionRoadmapId   String
+  phase                String // entity_formation | compliance | partner_selection | site_selection | launch
+  status               String   @default("not_started") // not_started | in_progress | completed | blocked
+  dependsOnMilestoneId String?
+  linkedEntityType     String?
+  linkedEntityId       String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  expansionRoadmap ExpansionRoadmap @relation(fields: [expansionRoadmapId], references: [id])
+  launchTasks      LaunchTask[]
+
+  @@index([expansionRoadmapId])
+  @@map("roadmap_milestones")
+}
+
+model FinancialProjection {
+  id                 String   @id @default(uuid())
+  organizationId     String
+  cityId             String?
+  horizonMonths      Int
+  userAssumptions    Json
+  platformBenchmarks Json
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization Organization                  @relation(fields: [organizationId], references: [id])
+  lineItems    FinancialProjectionLineItem[]
+
+  @@map("financial_projections")
+}
+
+model FinancialProjectionLineItem {
+  id                    String @id @default(uuid())
+  financialProjectionId String
+  label                 String
+  amount                Float
+  sourceType            String // user_input | platform_benchmark
+
+  financialProjection FinancialProjection @relation(fields: [financialProjectionId], references: [id])
+
+  @@index([financialProjectionId])
+  @@map("financial_projection_line_items")
+}
+
+model LaunchTask {
+  id                 String    @id @default(uuid())
+  organizationId     String
+  roadmapMilestoneId String?
+  title              String
+  status             String    @default("todo") // todo | in_progress | done | blocked
+  dueAt              DateTime?
+  createdAt          DateTime  @default(now())
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  roadmapMilestone RoadmapMilestone? @relation(fields: [roadmapMilestoneId], references: [id])
+
+  @@index([organizationId])
+  @@map("launch_tasks")
+}
+
+// ============================================================
+// 6. Managed Services
+// ============================================================
+
+model ManagedServiceEngagement {
+  id                     String   @id @default(uuid())
+  organizationId         String
+  linkedComplianceItemId String?
+  scope                  String
+  status                 String   @default("requested") // requested | scoping | in_progress | delivered | cancelled
+  assignedStaffId        String?
+  notes                  String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  organization         Organization            @relation(fields: [organizationId], references: [id])
+  linkedComplianceItem ComplianceWorkflowItem? @relation(fields: [linkedComplianceItemId], references: [id])
+
+  @@index([organizationId])
+  @@map("managed_service_engagements")
+}
+
+// ============================================================
+// 7. Platform Cross-Cutting
+// ============================================================
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String // compliance_deadline | partner_recommendation | managed_service_update | introduction_status_change | staleness_alert | invitation | system
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String?
+  actorUserId    String
+  action         String
+  entityType     String
+  entityId       String
+  before         Json?
+  after          Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  actor        User          @relation(fields: [actorUserId], references: [id])
+
+  @@index([createdAt])
+  @@index([organizationId])
+  @@map("audit_logs")
+}

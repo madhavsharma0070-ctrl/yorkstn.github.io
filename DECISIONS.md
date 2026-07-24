@@ -79,6 +79,31 @@ Architecture/product decisions made across this build, in chronological order. E
 **Decision:** 8 relative milestones (not calendar dates), sequenced strictly by dependency — Compliance OS ships before AI Market Intelligence specifically because it is lower AI-risk (deterministic) and unblocks the Readiness Score's real completion-percentage input.
 **See:** `docs/phase2/MVP_ROADMAP.md`, `docs/phase2/MILESTONES.md`.
 
+## D-21 — Tailwind pinned to v3 (not v4), prefixed `tw-`, preflight disabled
+**Decision:** `tailwindcss` is pinned to `^3` (npm installed v4 by default, a CSS-first config paradigm change not assumed by `docs/phase2/TECH_STACK.md`). The v3 config sets `prefix: 'tw-'` and `corePlugins.preflight = false`, and `content` is scoped only to `app/app/**`, `app/partner-portal/**`, `components/platform/**`.
+**Why:** `TECH_STACK.md` §2 says Tailwind should be "scoped to platform routes only," but Next.js App Router CSS is bundled per-route-segment, not truly style-scoped — a global stylesheet imported in a nested layout can still affect the whole app once client-side navigation loads it. Disabling preflight (Tailwind's global CSS reset) and prefixing every utility class removes the actual risk (global resets, class-name collisions with the marketing site's plain class names like `.btn`/`.nav`) regardless of Next.js's bundling behavior, rather than relying on bundling alone to keep the two design systems apart.
+**See:** `yorkstn/tailwind.config.js`, `yorkstn/app/app/platform.css`.
+
+## D-22 — Json fields are nullable, not `@default("{}")`/`@default("[]")`
+**Decision:** Every `Json` column in `yorkstn/prisma/schema.prisma` (`assumptions`, `payload`, `capacityAttributes`, `demographics`, `realEstateCostBenchmark`, `distributionMaturity`, `tenantMix`, `leaseBenchmark`, `attributes`) is `Json?` (nullable, no default), not `Json @default("{}")`/`@default("[]")`.
+**Why:** Prisma's SQLite migration generator emitted `DEFAULT {}` (an unquoted bare object) for these fields, which is invalid SQLite SQL and silently broke `prisma migrate dev` partway through table creation (discovered when only 12 of ~32 tables existed after a "successful"-looking migration run). Making the fields nullable sidesteps the broken default generation entirely; application code treats `null` as the empty/unknown case (`?? []`, `?? {}`) at the point of use instead of relying on a DB-level default.
+**See:** `yorkstn/prisma/schema.prisma`, this repo's Prisma migration history (the corrected migration replaces an earlier broken one — see the commit that follows this decision).
+
 ## D-17 — Three Phase 2 background research agents hit the account session-usage limit mid-run; their completed file writes were kept, only genuinely missing files were rewritten
 **Decision:** On investigation, all three agents' file-write tool calls had already succeeded before the session-limit error interrupted their final summary step (verified by checking each file for a natural, non-truncated ending). Only the 5 files an agent had not yet reached (`ERD.md`, `API_SPECIFICATION.md`, `AUTH_RBAC.md`, `MILESTONES.md`, `VALIDATION_PLAN.md`) were written directly in the main session, matching the existing files' naming/table conventions exactly (verified by reading the completed `DATABASE_SCHEMA.md` first). No completed work was overwritten or duplicated.
 **See:** commit `2c80da8`, this repo's git history.
+
+## D-18 — Prisma schema implements DATABASE_SCHEMA.md's Postgres ENUMs as validated `String` fields
+**Decision:** Every column DATABASE_SCHEMA.md models as a native Postgres `ENUM` (role, status, category fields across all modules) is a plain `String` in `yorkstn/prisma/schema.prisma`, with the closed value set enforced by Zod schemas at the API boundary (`lib/validation/enums.ts`) rather than by the database engine. Postgres `text[]` columns (e.g., `assumptions`) are `Json` for the same reason.
+**Why:** Prisma's native `enum` type and array columns are unsupported on SQLite, our chosen local-dev provider (`docs/phase2/TECH_STACK.md` §4). This preserves the same closed-value-set guarantee — just enforced in the application layer, consistent with the Zod-at-the-boundary convention `docs/phase2/API_SPECIFICATION.md` §0.2 already established — and keeps one schema file working identically against SQLite (dev) and Postgres (staging/prod), which was the whole point of the SQLite/Postgres choice in the first place.
+**See:** `yorkstn/prisma/schema.prisma` header comment, `yorkstn/lib/validation/enums.ts`.
+
+## D-19 — Pinned to Prisma 6.x, not the newly-released Prisma 7
+**Decision:** `prisma`/`@prisma/client` are pinned to `^6`, not the latest major (7), which was installed by default when this build began.
+**Why:** Prisma 7 removed the classic `datasource { url = env(...) }` schema pattern in favor of a `prisma.config.ts` + driver-adapter model. All of Phase 2's architecture docs (`DATABASE_SCHEMA.md`, `TECH_STACK.md`, `DEPLOYMENT_ARCHITECTURE.md`) were written assuming the classic, still-widely-documented pattern; adopting Prisma 7's new config model would have been an unplanned, riskier architecture change made under time pressure rather than a deliberate one. Revisit this pin deliberately (not as a side effect of `npm update`) once Prisma 7's adapter model has matured and a real reason to upgrade exists.
+**See:** `yorkstn/package.json`, this repo's Prisma migration history.
+
+## D-20 — Document storage behind a provider interface, defaulting to local filesystem (dev), S3 documented as the production target
+**Decision:** `lib/modules/compliance/documents/storage.adapter.ts` (per `docs/phase3/compliance-operating-system-engineering-spec.md` §1) exposes one interface with two implementations: a `local` adapter (writes to a gitignored `.local-storage/` directory, dev-only) and an `s3` adapter (inactive until AWS S3 credentials + bucket are provisioned, per `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8). Selected via `DOCUMENT_STORAGE_PROVIDER` env var.
+**Why:** No S3 bucket/credentials exist in this build environment; per the project's "flag rather than fabricate access to infrastructure" rule, Document Management must still work end-to-end for local development and demos without them.
+**See:** `yorkstn/.env.local.example`.

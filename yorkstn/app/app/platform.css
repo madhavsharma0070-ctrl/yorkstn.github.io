@@ -1,0 +1,24 @@
+/* Platform-only stylesheet (Tailwind, prefixed tw-, preflight disabled — see tailwind.config.js
+   and DECISIONS.md D-08/D-21). Imported ONLY by app/app/layout.tsx, never by the root layout,
+   so the marketing site's own globals.css is completely unaffected. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Minimal reset scoped under .platform-shell instead of Tailwind's global preflight, so it can
+   never bleed into the marketing site even though both share one CSS build. */
+.platform-shell,
+.platform-shell * {
+  box-sizing: border-box;
+}
+
+.platform-shell {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color: #1a1a1a;
+  background: #f7f7f8;
+  min-height: 100vh;
+}
