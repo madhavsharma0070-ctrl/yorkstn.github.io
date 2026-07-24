@@ -88,4 +88,10 @@ Per the original phased plan, Phase 2 is: design Yorkstn as a technology platfor
 - Make an explicit, documented decision on the three open strategic questions in Section 6 (ICP/motion, FDI-model target, build-vs-partner) before locking module scope, since each meaningfully changes which modules are core-MVP vs. later-phase.
 - Treat "platform + services hybrid" as the working architectural assumption for compliance-heavy modules (entity formation, FDI structuring) unless a stated reason argues otherwise, per Section 5.2.
 
-**This phase (Phase 1) is complete pending your review.** I have not proceeded to Phase 2 design work. Per your original instructions, I'm stopping here for approval before continuing.
+**Phase 1 status: complete and approved.** The user approved the Section 6 open questions' resolution directly (ICP, business model, and 4-module MVP scope — see `DECISIONS.md` D-01/D-02) on 2026-07-24 and directed the project to proceed through Phases 2–4 autonomously.
+
+---
+
+## 8. Phase 2 addendum (2026-07-24)
+
+Phase 2 (Product & Architecture Design) is complete — 20 documents in `docs/phase2/`, summarized and indexed in `PROJECT_MEMORY.md` §3. Key product/architecture decisions made during Phase 2 are logged in `DECISIONS.md`. This Phase 1 synthesis document remains accurate as written above; nothing in Phase 2 contradicted it. For current project status and next steps, see `PROJECT_MEMORY.md` (the authoritative "where things stand" document going forward) rather than treating this file as the live status tracker.
