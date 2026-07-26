@@ -53,11 +53,23 @@ Repo audit already done (§ below) — do not repeat it. Follow `docs/phase2/MVP
 **Existing repo audit findings (already gathered, do not re-audit):**
 - `yorkstn/` is a Next.js 14.2.35 App Router site, TypeScript strict, React 18, ESLint, no Tailwind, no ORM, no auth, no test framework yet.
 - Pages: `/`, `/about`, `/contact`, `/india`, `/insights`, `/services`, `/privacy`, `/terms`, plus `app/api/enquiry/route.ts` (AWS SES contact-form handler).
-- Components: `Navbar`, `Footer`, `MenuOverlay`, `InquiryModal`, `CookieBanner`, `ClientEffects` — all part of the marketing site's bespoke custom-cursor/grain-texture aesthetic (`app/globals.css`, CSS custom properties, no utility framework). **Do not touch these or the marketing pages** (`DECISIONS.md` D-07).
-- Deployment: AWS Amplify via `yorkstn/amplify.yml` (`appRoot: yorkstn`). `.env.local.example` currently only lists `NEXT_PUBLIC_GA_ID` and AWS SES credentials.
-- `Backup_Code` (repo root) and `Layout_backup`/`Page_backup` (inside `yorkstn/app/`) appear to be prior iteration artifacts, not currently imported/used anywhere live — leave them alone unless a specific reason to remove them arises; do not delete speculatively.
+- Components: `Navbar`, `Footer`, `MenuOverlay`, `InquiryModal`, `CookieBanner`, `ClientEffects` — all part of the marketing site's bespoke custom-cursor/grain-texture aesthetic (`app/(marketing)/globals.css`, CSS custom properties, no utility framework). **Do not touch these or the marketing pages** (`DECISIONS.md` D-07).
+- Deployment: AWS Amplify via `yorkstn/amplify.yml` (`appRoot: yorkstn`).
+- `Backup_Code` (repo root) and `Layout_backup`/`Page_backup` (now inside `yorkstn/app/(marketing)/`) appear to be prior iteration artifacts, not currently imported/used anywhere live — leave them alone unless a specific reason to remove them arises; do not delete speculatively.
+- **Structural note (Phase 4, D-23):** the marketing site was moved into `app/(marketing)/` (a route group — URLs unchanged) so the new platform section could get its own root layout (`app/(platform)/app/layout.tsx`) instead of inheriting the marketing site's navbar/cursor-effects/cookie-banner. This was a `git mv`-only move (no content changes) — verify with `git log --follow` on any marketing file if history looks confusing.
 
 Build order for Phase 4 (from `docs/phase2/MVP_ROADMAP.md`): Milestone 1 (Platform Foundation: auth/org/RBAC/seed data) → Milestone 2–3 (Compliance OS) → Milestone 4 (AI service layer, mock provider) → Milestone 5 (AI Market Intelligence) → Milestone 6 (Partner Discovery) → Milestone 7 (Retail Expansion Intelligence) → Milestone 8 (Managed Services + hardening). Definition of done per milestone: `docs/phase2/MILESTONES.md`.
+
+### Milestone 1 — Platform Foundation: COMPLETE
+
+All DoD items met (verified via `npm run build`, `npm run lint`, `npm test`, and a live smoke test with curl: signup, login, session, RBAC 403 vs 200, marketing site unaffected). Key files for a fresh session to orient from:
+- `yorkstn/prisma/schema.prisma` — full data model, all 4 modules (only Milestone 1's tables are populated with real routes so far; the rest exist in the schema ready for Milestones 2–7).
+- `yorkstn/auth.ts` — NextAuth.js v5 config. **Gotcha already solved, don't re-debug it:** `next-auth/jwt`'s `JWT` type is a re-export of `@auth/core/jwt`'s — module augmentation must target `@auth/core/jwt` directly (see `yorkstn/types/next-auth.d.ts`) or `token.*` fields silently type as `unknown`.
+- `yorkstn/lib/auth/rbac.ts` — the permission matrix, single source of enforcement truth, unit-tested in `rbac.test.ts`.
+- `yorkstn/lib/auth/session.ts` — `requireSession()`/`requireOrgContext()`, used by every API route.
+- `yorkstn/prisma/seed.ts` — demo org "Acme Kids Apparel (Demo)" + 7 users (all password `password123`): one per role (`priya.owner@…`, `admin@…`, `arjun.compliance@…`, `meera.analyst@…`, `viewer@…`), plus `ananya.staff@yorkstn.com` (yorkstn_staff) and `rohan.partner@demo.yorkstn.com` (partner). Run `npm run db:seed` after any `prisma migrate dev`/`reset` (reset runs it automatically).
+- Routes live at `yorkstn/app/(platform)/app/**` (URL: `/app/**`) — signup, login, onboarding, dashboard, invite/:token, settings/members all working end-to-end.
+- **Database resets are a real risk, not routine** — Prisma's own tooling hard-blocks `migrate reset`/similar when it detects an AI agent, requiring explicit per-instance user consent (see `DECISIONS.md` D-22's resolution history for the exact protocol that was followed: confirm exact path + untracked-by-git + no shared DB, get explicit "yes," pass consent via `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`). Don't route around this by deleting `dev.db` directly without going through that same confirmation process again in a future session, even though it's "just" a local file.
 
 **Credentials/infra genuinely not available in this environment (do not attempt to fabricate; work around per `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8, flag and continue rather than stopping):**
 - Production/staging PostgreSQL connection (use SQLite locally in the meantime).

@@ -6,7 +6,7 @@ Live action tracker. Check items off as completed; the first unchecked item is w
 
 Following `docs/phase2/MVP_ROADMAP.md` / `docs/phase2/MILESTONES.md` sequencing:
 
-- [ ] Milestone 1 — Platform Foundation (Prisma schema + SQLite dev DB, NextAuth.js credentials+JWT, RBAC helper + tests, org/brand-profile onboarding, seed script, empty-state dashboard).
+- [x] Milestone 1 — Platform Foundation (Prisma schema + SQLite dev DB, NextAuth.js credentials+JWT, RBAC helper + tests, org/brand-profile onboarding, seed script, empty-state dashboard, org switcher, sign-out). Verified via build+lint+unit tests+live smoke test (signup, login, RBAC 403/200, marketing site unaffected).
 - [ ] Milestone 2 — Compliance OS: Entity Formation vertical slice (rules engine, document versioning, staleness indicator).
 - [ ] Milestone 3 — Compliance OS: remaining workflows (Import/GST/BIS/Trademark) + cross-workflow timeline.
 - [ ] Milestone 4 — AI service layer (provider-agnostic interface, mock provider, RAG scaffolding over seed corpus).
@@ -15,6 +15,11 @@ Following `docs/phase2/MVP_ROADMAP.md` / `docs/phase2/MILESTONES.md` sequencing:
 - [ ] Milestone 7 — Retail Expansion Intelligence (city/mall intelligence, site selection, roadmap, financial projections, launch planning, Expansion Dashboard).
 - [ ] Milestone 8 — Managed Services + cross-cutting hardening (audit log sweep, full RBAC re-verification, provisioning-checklist review).
 - [ ] Update `PROJECT_MEMORY.md`, `CHANGELOG.md` at each milestone boundary, and after every work session regardless of milestone boundary.
+
+## Milestone 1 follow-ups (non-blocking, deferred)
+
+- [ ] Wire invitation emails through the existing AWS SES integration (`app/api/enquiry/route.ts` already has a working SES client) — invitations are fully functional today via their direct `/app/invite/:token` link, shown/copyable in the Members UI, so this is a UX polish item, not a functional gap.
+- [ ] Add an automated integration test asserting a session's active-organization claim can't be set to an org the caller isn't a member of (verified manually via live smoke test during Milestone 1; not yet covered by an automated test since it needs a seeded test DB, not just pure-function unit tests).
 
 ## Standing items (ongoing, not phase-bound)
 

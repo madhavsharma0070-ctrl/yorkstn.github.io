@@ -18,7 +18,14 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
+// NOTE: `next-auth/jwt` merely re-exports `@auth/core/jwt` (`export * from
+// "@auth/core/jwt"`) in this version — it does not declare the `JWT`
+// interface itself. TypeScript's declaration merging only applies where an
+// interface is actually declared, so this augmentation must target
+// `@auth/core/jwt` directly or it silently has no effect (every `token.*`
+// access falls back to the base interface's `Record<string, unknown>` index
+// signature, typed `unknown`).
+declare module '@auth/core/jwt' {
   interface JWT {
     userId: string
     userType: UserType

@@ -2,6 +2,17 @@
 
 All notable changes to the Yorkstn project (research, product/architecture design, and implementation) are recorded here, most recent first. This complements `git log` with phase-level context; it does not replace commit messages.
 
+## Phase 4 — Implementation, Milestone 1: Platform Foundation (2026-07-26)
+
+- Prisma schema for the complete data model (all 4 modules), SQLite for local dev / Postgres-compatible for production. Enums implemented as Zod-validated strings (SQLite doesn't support native Prisma enums); Json fields nullable rather than defaulted (SQLite generated invalid `DEFAULT {}` SQL for object/array defaults, silently truncating migrations — root-caused and fixed).
+- NextAuth.js v5 (Credentials + JWT sessions), RBAC permission matrix + enforcement helper (unit-tested), shared API error envelope, audit-log helper.
+- Onboarding, invitation (create/preview/accept), organization/member management, and session active-organization-switch API routes and UI pages.
+- Seed script: demo org + 7 users (one per role, plus a Yorkstn Staff and a Partner demo account).
+- **Structural fix:** moved the marketing site into an `app/(marketing)/` route group (URL-preserving `git mv`) so the new platform (`app/(platform)/app/**`) gets its own root layout — an initial attempt nested the platform under the marketing site's root layout, which would have leaked the marketing site's navbar/cursor-effects/cookie-banner onto every platform page.
+- Tailwind v3 (pinned; v4 installed by default has an incompatible config model) scoped to platform routes only, prefixed and preflight-disabled.
+- Verified via `npm run build`, `npm run lint`, `npm test` (10 unit tests), and a live smoke test (signup, login, session, RBAC 403-vs-200 enforcement, marketing site unaffected).
+- Full decision trail: `DECISIONS.md` D-18 through D-23.
+
 ## Phase 3 — Per-Module Engineering Specs (2026-07-24)
 
 - Added `docs/phase3/ai-market-intelligence-engineering-spec.md`, `compliance-operating-system-engineering-spec.md`, `partner-discovery-engineering-spec.md`, `retail-expansion-intelligence-engineering-spec.md`.

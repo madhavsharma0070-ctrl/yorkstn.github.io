@@ -44,7 +44,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-      if (user) {
+      // `user.id` is optional on Auth.js's base `User` type, but our
+      // `authorize()` above always returns a real Prisma id — this guard is
+      // for type-narrowing correctness, not because it's expected to trigger.
+      if (user && user.id) {
         token.userId = user.id
         token.userType = user.userType
 
