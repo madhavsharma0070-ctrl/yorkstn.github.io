@@ -81,6 +81,11 @@ Deterministic rules engine (`lib/modules/compliance/entity-formation/rules-engin
 Import (`lib/modules/compliance/import/`), BIS (shares the same HSN lookup), GST (`app/api/v1/compliance/gst/states`), Trademark (`lib/modules/compliance/trademark/`). All four have UI pages under `app/(platform)/app/compliance/{import,bis,gst,trademark}`. The cross-workflow timeline (`/app/compliance`, `/api/v1/compliance/overview`) already aggregated all workflow types since Milestone 2 built it type-agnostic — no additional work needed there.
 **Known, documented (not silent) gap:** GST state registration is added manually; auto-flagging from the org's site/warehouse footprint depends on Retail Expansion Intelligence's `sites` (Milestone 7), noted inline in `app/api/v1/compliance/gst/states/route.ts`'s docstring — wire this up when Milestone 7 lands.
 
+### Milestone 4 — AI Service Layer: COMPLETE
+
+`lib/modules/market-intelligence/ai-provider/` (types, mock provider, Claude provider, factory) + `lib/modules/market-intelligence/retrieval/` (curated corpus + tag-overlap retrieval). No API/UI — this milestone is infrastructure only, consumed starting in Milestone 5.
+**Important for Milestone 5:** call `getAiProvider()` from `lib/modules/market-intelligence/ai-provider/index.ts` — never instantiate `MockAiProvider`/`ClaudeAiProvider` directly in feature code, or the `AI_PROVIDER` env-var switch stops working. `ClaudeAiProvider` has never been run against a real key in this environment — if `AI_PROVIDER=anthropic` is ever enabled, test it for real before trusting its output shape.
+
 **Credentials/infra genuinely not available in this environment (do not attempt to fabricate; work around per `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8, flag and continue rather than stopping):**
 - Production/staging PostgreSQL connection (use SQLite locally in the meantime).
 - AWS S3 bucket + IAM credentials for document storage (stub/local-filesystem or documented no-op in the meantime).

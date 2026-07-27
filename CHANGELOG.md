@@ -2,6 +2,15 @@
 
 All notable changes to the Yorkstn project (research, product/architecture design, and implementation) are recorded here, most recent first. This complements `git log` with phase-level context; it does not replace commit messages.
 
+## Phase 4 — Implementation, Milestone 4: AI Service Layer (2026-07-27)
+
+- Provider-agnostic `AiProvider` interface + the AI Output Standard types (`lib/modules/market-intelligence/ai-provider/types.ts`).
+- `MockAiProvider` — the MVP default, deterministic, never claims high confidence, honestly returns `insufficient_data` when the curated corpus has no relevant entry rather than fabricating content.
+- `ClaudeAiProvider` — a real, documented drop-in against the Messages API (grounded/RAG-constrained prompt, JSON-only response contract), selected via `AI_PROVIDER=anthropic`. **Not exercised in this environment** — no `ANTHROPIC_API_KEY` is available; must be verified against a real key before production use.
+- Curated retrieval corpus (`retrieval/corpus.ts`) — ~10 hand-picked, source-traceable facts from the Phase 1 research files, tagged by brand category/topic — and tag-overlap retrieval (`retrieval/corpus-index.ts`). Deliberately not vector/embedding search (D-25): `pgvector` is Postgres-only and no embeddings API key exists here.
+- No API routes or UI yet, by design — this milestone is shared infrastructure only, per `docs/phase2/MVP_ROADMAP.md`'s Milestone 4 scope; Milestone 5 builds the actual Market Intelligence features on top of it.
+- Verified via build+lint+37 unit tests (8 new): retrieval ranking/limit/no-match behavior, mock provider's insufficient-data honesty and source traceability, AI Output Standard shape conformance.
+
 ## Phase 4 — Implementation, Milestone 3: Compliance OS remaining workflows (2026-07-27)
 
 - HSN-chapter-keyed compliance lookup (`lib/modules/compliance/import/hsn-lookup.service.ts`) — curated seed table (apparel, footwear, cosmetics, toys, electronics, furniture chapters), deterministic and unit-tested, explicitly not exhaustive and labeled "requires further validation" for unknown chapters.

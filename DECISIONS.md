@@ -100,6 +100,11 @@ Architecture/product decisions made across this build, in chronological order. E
 **Why:** Milestone 1's schema was written from a partial reading of the (very long) `DATABASE_SCHEMA.md`; building the actual Document Management feature in Milestone 2 required re-reading that section closely, which surfaced the drift. Fixed forward before any real document data existed (the tables were empty — verified before migrating) rather than carrying the inconsistency into Milestone 2's code.
 **See:** migration `20260727122319_fix_document_versioning_schema`.
 
+## D-25 — RAG retrieval is deterministic tag-overlap matching, not vector/embedding search
+**Decision:** `lib/modules/market-intelligence/retrieval/corpus-index.ts` retrieves from a small curated corpus (`corpus.ts`) by exact tag overlap, not semantic/vector similarity.
+**Why:** `docs/phase2/TECH_STACK.md` already flags `pgvector` as Postgres-only (unavailable on the SQLite local-dev database), and no embedding-API credential exists in this environment. Tag-overlap retrieval against a small, hand-curated corpus is honest about what MVP actually has — a documented scope decision, not a stubbed placeholder pretending to be full semantic RAG. Revisit when a real Postgres+pgvector (or an external vector store) and an embeddings API key are provisioned.
+**See:** `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8 (credential checklist).
+
 ## D-17 — Three Phase 2 background research agents hit the account session-usage limit mid-run; their completed file writes were kept, only genuinely missing files were rewritten
 **Decision:** On investigation, all three agents' file-write tool calls had already succeeded before the session-limit error interrupted their final summary step (verified by checking each file for a natural, non-truncated ending). Only the 5 files an agent had not yet reached (`ERD.md`, `API_SPECIFICATION.md`, `AUTH_RBAC.md`, `MILESTONES.md`, `VALIDATION_PLAN.md`) were written directly in the main session, matching the existing files' naming/table conventions exactly (verified by reading the completed `DATABASE_SCHEMA.md` first). No completed work was overwritten or duplicated.
 **See:** commit `2c80da8`, this repo's git history.
