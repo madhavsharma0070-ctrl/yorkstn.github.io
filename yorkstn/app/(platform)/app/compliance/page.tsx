@@ -39,12 +39,23 @@ export default function ComplianceOverviewPage() {
     <AppShell>
       <div className="tw-mb-6 tw-flex tw-items-center tw-justify-between">
         <h1 className="tw-text-2xl tw-font-semibold">Compliance</h1>
-        <Link
-          href="/app/compliance/entity-formation"
-          className="tw-rounded tw-bg-gray-900 tw-px-4 tw-py-2 tw-text-sm tw-text-white"
-        >
-          Entity Formation workflow
-        </Link>
+        <div className="tw-flex tw-gap-2">
+          {[
+            ['Entity Formation', '/app/compliance/entity-formation'],
+            ['Import', '/app/compliance/import'],
+            ['GST', '/app/compliance/gst'],
+            ['BIS', '/app/compliance/bis'],
+            ['Trademark', '/app/compliance/trademark'],
+          ].map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="tw-rounded tw-border tw-border-gray-300 tw-px-3 tw-py-2 tw-text-xs hover:tw-bg-gray-50"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {loading ? (

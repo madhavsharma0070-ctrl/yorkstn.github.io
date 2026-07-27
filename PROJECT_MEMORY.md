@@ -76,6 +76,11 @@ All DoD items met (verified via `npm run build`, `npm run lint`, `npm test`, and
 Deterministic rules engine (`lib/modules/compliance/entity-formation/rules-engine.ts`, 6-branch decision table, unit-tested), checklist templates, Document Management (storage adapter + versioning service + MIME/size validation), content staleness helper. API routes under `app/api/v1/compliance/**`. UI at `app/(platform)/app/compliance/**`. Verified via build+lint+22 tests+live smoke test (see `CHANGELOG.md`).
 **Note for future sessions:** while building this, found and fixed real drift between the Milestone 1 `Document`/`DocumentVersion` schema and `docs/phase2/DATABASE_SCHEMA.md`'s actual design (D-24) — if anything else in the schema looks inconsistent with the docs, treat `DATABASE_SCHEMA.md` as the tiebreaker and fix forward the same way (check for existing data first; these tables were empty so no data-loss risk existed).
 
+### Milestone 3 — Compliance OS: remaining workflows: COMPLETE
+
+Import (`lib/modules/compliance/import/`), BIS (shares the same HSN lookup), GST (`app/api/v1/compliance/gst/states`), Trademark (`lib/modules/compliance/trademark/`). All four have UI pages under `app/(platform)/app/compliance/{import,bis,gst,trademark}`. The cross-workflow timeline (`/app/compliance`, `/api/v1/compliance/overview`) already aggregated all workflow types since Milestone 2 built it type-agnostic — no additional work needed there.
+**Known, documented (not silent) gap:** GST state registration is added manually; auto-flagging from the org's site/warehouse footprint depends on Retail Expansion Intelligence's `sites` (Milestone 7), noted inline in `app/api/v1/compliance/gst/states/route.ts`'s docstring — wire this up when Milestone 7 lands.
+
 **Credentials/infra genuinely not available in this environment (do not attempt to fabricate; work around per `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8, flag and continue rather than stopping):**
 - Production/staging PostgreSQL connection (use SQLite locally in the meantime).
 - AWS S3 bucket + IAM credentials for document storage (stub/local-filesystem or documented no-op in the meantime).

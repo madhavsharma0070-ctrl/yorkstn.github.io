@@ -2,6 +2,16 @@
 
 All notable changes to the Yorkstn project (research, product/architecture design, and implementation) are recorded here, most recent first. This complements `git log` with phase-level context; it does not replace commit messages.
 
+## Phase 4 — Implementation, Milestone 3: Compliance OS remaining workflows (2026-07-27)
+
+- HSN-chapter-keyed compliance lookup (`lib/modules/compliance/import/hsn-lookup.service.ts`) — curated seed table (apparel, footwear, cosmetics, toys, electronics, furniture chapters), deterministic and unit-tested, explicitly not exhaustive and labeled "requires further validation" for unknown chapters.
+- Import Compliance checklist generation (IEC, DGFT/CBIC clearance, Legal Metrology labelling, BIS cross-reference) sharing the HSN lookup.
+- BIS checklist generation (FMCS vs. CRS task sets), only creating tasks when the lookup actually flags BIS applicability.
+- GST per-state registration tracker (manual add for now — auto-derivation from site/warehouse footprint is a documented Milestone 7 dependency, not a silent gap).
+- Trademark/IP fixed-stage tracker (search → filing → examination → publication → opposition_window → registered), unit-tested stage progression.
+- UI pages for all four workflows, linked from the Compliance overview.
+- Verified via build+lint+29 unit tests (7 new)+live smoke test: apparel HSN correctly identified as non-BIS/labelling-required, toys HSN correctly triggers BIS CRS tasks, duplicate GST state registration correctly rejected (409), trademark stage advancement works end-to-end, overview correctly aggregates all 4 new workflow types alongside Entity Formation.
+
 ## Phase 4 — Implementation, Milestone 2: Compliance OS Entity Formation (2026-07-27)
 
 - Deterministic entity-formation rules engine (`lib/modules/compliance/entity-formation/rules-engine.ts`) — 6-branch decision table covering all `EntityTypeRec` values, unit-tested for determinism and per-branch correctness.
