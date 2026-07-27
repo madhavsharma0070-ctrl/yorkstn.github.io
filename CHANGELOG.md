@@ -2,6 +2,17 @@
 
 All notable changes to the Yorkstn project (research, product/architecture design, and implementation) are recorded here, most recent first. This complements `git log` with phase-level context; it does not replace commit messages.
 
+## Phase 4 — Implementation, Milestone 2: Compliance OS Entity Formation (2026-07-27)
+
+- Deterministic entity-formation rules engine (`lib/modules/compliance/entity-formation/rules-engine.ts`) — 6-branch decision table covering all `EntityTypeRec` values, unit-tested for determinism and per-branch correctness.
+- Per-entity-type checklist templates sourced from Phase 1 research, auto-created as `ComplianceWorkflowItem` rows on recommendation.
+- Document Management: storage-adapter interface (local-filesystem dev default, S3 documented but not implemented until credentials exist), append-only versioning service, MIME-type/size validation, checksums.
+- Content staleness helper (AC US-27) — unit-tested.
+- API routes: entity-formation recommend, compliance overview, per-workflow-type view, workflow-item update, document upload/list.
+- UI: Compliance overview (cross-workflow timeline) and Entity Formation questionnaire/recommendation/checklist pages.
+- **Schema correction (D-24):** fixed drift between the Milestone 1 `Document`/`DocumentVersion` Prisma models and `docs/phase2/DATABASE_SCHEMA.md`'s actual design, caught while building this feature — corrected before any real document data existed.
+- Verified via build+lint+22 unit tests (10 new) + live smoke test: recommendation generation, checklist creation, document upload (rejects `.txt`, accepts PDF), RBAC 403 (viewer denied `recommend`) vs 200 (viewer can view), tenant-scoped 404 for a nonexistent workflow item.
+
 ## Phase 4 — Implementation, Milestone 1: Platform Foundation (2026-07-26)
 
 - Prisma schema for the complete data model (all 4 modules), SQLite for local dev / Postgres-compatible for production. Enums implemented as Zod-validated strings (SQLite doesn't support native Prisma enums); Json fields nullable rather than defaulted (SQLite generated invalid `DEFAULT {}` SQL for object/array defaults, silently truncating migrations — root-caused and fixed).

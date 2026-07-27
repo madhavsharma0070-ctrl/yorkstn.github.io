@@ -33,6 +33,9 @@ yarn-error.log*
 /prisma/*.db
 /prisma/*.db-journal
 
+# local document storage adapter (dev only — see DECISIONS.md D-20)
+/.local-storage/
+
 # vercel
 .vercel
 

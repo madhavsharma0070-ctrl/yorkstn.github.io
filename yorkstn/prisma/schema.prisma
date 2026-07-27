@@ -71,15 +71,16 @@ model User {
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
-  memberships          Membership[]
-  invitationsSent      Invitation[]          @relation("InvitedBy")
-  staffAssignments     StaffOrgAssignment[]
-  aiInsightsRequested  AiInsight[]
-  documentsUploaded    Document[]
-  partnerVerifications PartnerVerification[]
-  introductionRequests IntroductionRequest[]
-  notifications        Notification[]
-  auditLogs            AuditLog[]
+  memberships              Membership[]
+  invitationsSent          Invitation[]          @relation("InvitedBy")
+  staffAssignments         StaffOrgAssignment[]
+  aiInsightsRequested      AiInsight[]
+  documentsCreated         Document[]
+  documentVersionsUploaded DocumentVersion[]     @relation("DocumentVersionUploadedBy")
+  partnerVerifications     PartnerVerification[]
+  introductionRequests     IntroductionRequest[]
+  notifications            Notification[]
+  auditLogs                AuditLog[]
 
   @@map("users")
 }
@@ -274,36 +275,44 @@ model ComplianceWorkflowItem {
 }
 
 model Document {
-  id               String   @id @default(uuid())
-  organizationId   String
-  attachedToType   String // compliance_workflow_item | partner_verification
-  attachedToId     String
-  documentType     String // certificate | filing | poa | correspondence | verification_document | other
-  documentGroupId  String
-  uploadedByUserId String
-  createdAt        DateTime @default(now())
+  id              String    @id @default(uuid())
+  organizationId  String
+  attachedToType  String // compliance_workflow_item | partner | brand_profile | managed_service_engagement
+  attachedToId    String
+  documentType    String // certificate | filing | poa | correspondence | verification_document | other
+  title           String
+  createdByUserId String
+  createdAt       DateTime  @default(now())
+  deletedAt       DateTime? // soft-delete of the document RECORD; versions are never deleted (append-only, see DocumentVersion)
 
   organization Organization      @relation(fields: [organizationId], references: [id])
-  uploadedBy   User              @relation(fields: [uploadedByUserId], references: [id])
+  createdBy    User              @relation(fields: [createdByUserId], references: [id])
   versions     DocumentVersion[]
 
-  @@index([attachedToType, attachedToId, documentGroupId])
+  @@index([attachedToType, attachedToId])
+  @@index([organizationId])
   @@map("documents")
 }
 
+/// Append-only version history (AC US-25: "previous versions remain retrievable, not overwritten").
+/// No deletedAt here by design — hard delete never applies to this table (DATABASE_SCHEMA.md §1.4).
 model DocumentVersion {
-  id            String   @id @default(uuid())
-  documentId    String
-  versionNumber Int      @default(1)
-  fileUrl       String
-  fileName      String
-  mimeType      String
-  sizeBytes     Int
-  createdAt     DateTime @default(now())
+  id               String   @id @default(uuid())
+  documentId       String
+  versionNumber    Int
+  storageKey       String // opaque key from lib/modules/compliance/documents/storage.adapter.ts
+  fileName         String
+  mimeType         String
+  sizeBytes        Int
+  checksum         String?
+  uploadedByUserId String
+  uploadedAt       DateTime @default(now())
 
-  document Document @relation(fields: [documentId], references: [id])
+  document   Document @relation(fields: [documentId], references: [id])
+  uploadedBy User     @relation("DocumentVersionUploadedBy", fields: [uploadedByUserId], references: [id])
 
-  @@index([documentId, versionNumber])
+  @@unique([documentId, versionNumber])
+  @@index([documentId])
   @@map("document_versions")
 }
 

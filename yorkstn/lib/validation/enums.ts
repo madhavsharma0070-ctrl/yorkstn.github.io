@@ -91,7 +91,13 @@ export const documentTypeSchema = z.enum([
   'other',
 ])
 
-export const attachedToTypeSchema = z.enum(['compliance_workflow_item', 'partner_verification'])
+export const attachedToTypeSchema = z.enum([
+  'compliance_workflow_item',
+  'partner',
+  'brand_profile',
+  'managed_service_engagement',
+])
+export type AttachedToType = z.infer<typeof attachedToTypeSchema>
 
 export const partnerCategorySchema = z.enum([
   'manufacturer',
