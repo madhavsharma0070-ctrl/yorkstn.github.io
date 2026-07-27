@@ -86,6 +86,11 @@ Import (`lib/modules/compliance/import/`), BIS (shares the same HSN lookup), GST
 `lib/modules/market-intelligence/ai-provider/` (types, mock provider, Claude provider, factory) + `lib/modules/market-intelligence/retrieval/` (curated corpus + tag-overlap retrieval). No API/UI — this milestone is infrastructure only, consumed starting in Milestone 5.
 **Important for Milestone 5:** call `getAiProvider()` from `lib/modules/market-intelligence/ai-provider/index.ts` — never instantiate `MockAiProvider`/`ClaudeAiProvider` directly in feature code, or the `AI_PROVIDER` env-var switch stops working. `ClaudeAiProvider` has never been run against a real key in this environment — if `AI_PROVIDER=anthropic` is ever enabled, test it for real before trusting its output shape.
 
+### Milestone 5 — AI Market Intelligence module: COMPLETE
+
+All 6 generative features (`lib/modules/market-intelligence/insights/*`, `city-recommendations.service.ts`) + the deterministic Expansion Readiness Score (`readiness-score/`). API under `app/api/v1/market-intelligence/**`, UI at `app/(platform)/app/market-intelligence`. Verified via build+lint+46 tests+live smoke test.
+**Note for future sessions:** the mock AI provider's corpus (`lib/modules/market-intelligence/retrieval/corpus.ts`) only has ~10 entries — expect `insufficient_data` results for anything outside apparel/footwear/cosmetics/toys/electronics/furniture and the general India market-entry topics already covered. Expanding the corpus (more categories, more cities' `distributionMaturity`/`realEstateCostBenchmark` data) is a legitimate, low-risk way to make demos richer without touching any code logic.
+
 **Credentials/infra genuinely not available in this environment (do not attempt to fabricate; work around per `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8, flag and continue rather than stopping):**
 - Production/staging PostgreSQL connection (use SQLite locally in the meantime).
 - AWS S3 bucket + IAM credentials for document storage (stub/local-filesystem or documented no-op in the meantime).

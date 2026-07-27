@@ -2,6 +2,16 @@
 
 All notable changes to the Yorkstn project (research, product/architecture design, and implementation) are recorded here, most recent first. This complements `git log` with phase-level context; it does not replace commit messages.
 
+## Phase 4 — Implementation, Milestone 5: AI Market Intelligence module (2026-07-27)
+
+- Shared `generateAndSaveInsight`/`getLatestInsight` path consuming Milestone 4's AI service layer, used by 5 near-identical features (market analysis, consumer insights, competitor intelligence, pricing intelligence, demand forecast) instead of duplicating persistence logic five times.
+- Pricing Intelligence reads Compliance's HSN duty/labelling signal through its exported `lookupHsnCompliance` function (cross-module read, never a raw Prisma query into another module's tables).
+- Demand Forecast always labels its methodology `"proxy-based (no first-party sales history)"` (US-14).
+- City Recommendations: a genuine hybrid — deterministic, unit-tested `scoreCities` (population tier + distribution maturity, user-adjustable weights) merged with an AI narrative; a city with no data is flagged `insufficient_data`, never given a fabricated score.
+- Expansion Readiness Score: deterministic scoring engine (compliance completion % from real DB data, market-clarity flags from real generated insights, capital-readiness from caller input) — structurally separate from `ai_insights`, never AI-generated (DECISIONS.md D-04).
+- API routes for all 6 features (GET latest + POST generate) plus readiness-score (GET + POST recalculate). UI: a consolidated Market Intelligence page with per-feature cards, confidence badges, source links, and a readiness-score panel.
+- Verified via build+lint+46 unit tests (9 new: readiness-score determinism/driver-math, city-scoring determinism/ranking/insufficient-data) + live smoke test: market analysis generated with real, traceable sources; city recommendations correctly ranked Mumbai/Delhi (tier1, high maturity) above Pune (tier2); demand forecast correctly labeled; readiness score computed correctly (20/100 with 2-of-3 market-clarity signals, 0 compliance, 0 capital, matching hand-calculated expectation); RBAC enforced (viewer: 403 on generate/recalculate, 200 on view).
+
 ## Phase 4 — Implementation, Milestone 4: AI Service Layer (2026-07-27)
 
 - Provider-agnostic `AiProvider` interface + the AI Output Standard types (`lib/modules/market-intelligence/ai-provider/types.ts`).
