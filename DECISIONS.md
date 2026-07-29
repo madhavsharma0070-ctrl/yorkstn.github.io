@@ -128,3 +128,18 @@ Architecture/product decisions made across this build, in chronological order. E
 **Decision:** `lib/modules/compliance/documents/storage.adapter.ts` (per `docs/phase3/compliance-operating-system-engineering-spec.md` §1) exposes one interface with two implementations: a `local` adapter (writes to a gitignored `.local-storage/` directory, dev-only) and an `s3` adapter (inactive until AWS S3 credentials + bucket are provisioned, per `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8). Selected via `DOCUMENT_STORAGE_PROVIDER` env var.
 **Why:** No S3 bucket/credentials exist in this build environment; per the project's "flag rather than fabricate access to infrastructure" rule, Document Management must still work end-to-end for local development and demos without them.
 **See:** `yorkstn/.env.local.example`.
+
+## D-27 — Onboarding now creates the 5 `RoadmapMilestone` rows eagerly, matching `prisma/seed.ts`
+**Decision:** `app/api/v1/onboarding/organization/route.ts` now creates one `ExpansionRoadmap` plus its 5 `RoadmapMilestone` rows (`entity_formation`, `compliance`, `partner_selection`, `site_selection`, `launch`) inside the same transaction that creates the `Organization`, matching what `prisma/seed.ts` had always done for the demo org.
+**Why:** Found while building Milestone 7's roadmap view: only the seed script pre-seeded milestones, so any real (non-seeded) organization created via onboarding had an `ExpansionRoadmap` with zero milestones — `getRoadmap`/`syncRoadmapMilestones` would return an empty list for every real signup. Fixed forward before any UI consumed the roadmap.
+**See:** `yorkstn/app/api/v1/onboarding/organization/route.ts`.
+
+## D-28 — Expansion module's mutating routes don't `.uuid()`-constrain references to entities that may carry human-readable seed ids
+**Decision:** `mallId`/`crePartnerId` (sites) and `roadmapMilestoneId` (launch tasks) are validated with `z.string().min(1)`, not `z.string().uuid()`.
+**Why:** Found via live smoke test: `prisma/seed.ts` assigns explicit, human-readable ids to some reference entities (`seed-mall-mumbai-phoenix`, `seed-partner-rohan-furnishings-pvt.-ltd.`, `seed-milestone-<org>-<phase>`) rather than letting Prisma's `@default(uuid())` generate one. A brand user attempting to add a candidate site at the seeded demo mall got a `VALIDATION_ERROR` rejecting a perfectly legitimate reference. This mirrors the existing convention already used by the Partners module's routes, which never impose a `.uuid()` format constraint on ids for the same reason.
+**See:** `yorkstn/app/api/v1/expansion/sites/route.ts`, `yorkstn/app/api/v1/expansion/launch-tasks/route.ts`.
+
+## D-29 — `site_selection` roadmap milestone gained an `in_progress` state
+**Decision:** `milestone-auto-sync.ts`'s `site_selection` status is now `completed` (a site is `selected`), `in_progress` (at least one candidate site exists but none is `selected` yet), or `not_started` (no sites at all) — previously it was binary (`completed`/`not_started` only).
+**Why:** Found via live smoke test: creating and actively shortlisting candidate sites left the roadmap showing `site_selection: not_started`, inconsistent with how `entity_formation`, `compliance`, and `launch` all already modeled a three-state progression. A brand actively evaluating sites would see a misleadingly blank roadmap step.
+**See:** `yorkstn/lib/modules/expansion/roadmap/milestone-auto-sync.ts`.

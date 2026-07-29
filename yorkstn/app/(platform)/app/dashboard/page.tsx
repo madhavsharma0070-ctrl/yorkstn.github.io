@@ -2,12 +2,12 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { AppShell } from '@/components/platform/AppShell'
+import { DashboardSummary } from '@/components/platform/DashboardSummary'
 
-// US-46 (Expansion Dashboard) — Milestone 1 ships the empty-state version
-// (no fabricated data): real org context, real membership count, and a
-// module-by-module "coming in Milestone N" summary rather than placeholder
-// numbers. Full aggregation (Readiness Score, open Compliance items, Partner
-// status, Roadmap progress) lands in Milestone 7 per MVP_ROADMAP.md.
+// US-46 — Expansion Dashboard. Real org context plus the composed
+// cross-module summary (Readiness Score, open Compliance items, Partner
+// introduction counts, Roadmap progress) from /api/v1/dashboard
+// (dashboard-aggregation.service.ts).
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect('/app/login')
@@ -32,30 +32,7 @@ export default async function DashboardPage() {
           : 'Brand profile not yet completed.'}
       </p>
 
-      <div className="tw-grid tw-grid-cols-2 tw-gap-4 md:tw-grid-cols-4">
-        <div className="tw-rounded tw-border tw-border-gray-200 tw-p-4">
-          <div className="tw-text-2xl tw-font-semibold">{organization._count.memberships}</div>
-          <div className="tw-text-xs tw-text-gray-500">Team members</div>
-        </div>
-        <div className="tw-rounded tw-border tw-border-gray-200 tw-p-4">
-          <div className="tw-text-2xl tw-font-semibold">—</div>
-          <div className="tw-text-xs tw-text-gray-500">Readiness score (Milestone 5)</div>
-        </div>
-        <div className="tw-rounded tw-border tw-border-gray-200 tw-p-4">
-          <div className="tw-text-2xl tw-font-semibold">—</div>
-          <div className="tw-text-xs tw-text-gray-500">Open compliance tasks (Milestone 2–3)</div>
-        </div>
-        <div className="tw-rounded tw-border tw-border-gray-200 tw-p-4">
-          <div className="tw-text-2xl tw-font-semibold">—</div>
-          <div className="tw-text-xs tw-text-gray-500">Partner introductions (Milestone 6)</div>
-        </div>
-      </div>
-
-      <p className="tw-mt-10 tw-text-sm tw-text-gray-400">
-        This is the Milestone 1 empty-state dashboard (docs/phase2/MILESTONES.md). Market
-        Intelligence, Compliance, Partner Discovery, and Retail Expansion Intelligence modules
-        build out incrementally in later milestones.
-      </p>
+      <DashboardSummary teamMemberCount={organization._count.memberships} />
     </AppShell>
   )
 }

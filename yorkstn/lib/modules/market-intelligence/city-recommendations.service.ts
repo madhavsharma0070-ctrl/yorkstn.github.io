@@ -39,7 +39,8 @@ export interface CityScoreResult {
 const TIER_SCORES: Record<string, number> = { tier1: 100, tier2: 65, tier3: 35 }
 const MATURITY_LEVEL_SCORES: Record<string, number> = { high: 100, medium: 60, low: 30 }
 
-function scoreDistributionMaturity(raw: unknown): { score: number; hasData: boolean } {
+/** Exported for reuse by Retail Expansion Intelligence's site scoring (same maturity-level convention). */
+export function scoreDistributionMaturity(raw: unknown): { score: number; hasData: boolean } {
   if (!raw || typeof raw !== 'object') return { score: 0, hasData: false }
   const levels = Object.values(raw as Record<string, unknown>).filter(
     (v): v is string => typeof v === 'string' && v in MATURITY_LEVEL_SCORES,

@@ -39,7 +39,7 @@ PRD, USER_STORIES, PERSONAS, INFORMATION_ARCHITECTURE, FEATURE_SPECIFICATIONS, A
 **Key approved assumptions (from the user, 2026-07-24 — treat as durable unless future validated research overrides them):**
 - ICP, business model, and 4-module MVP scope per `docs/phase2/PRD.md` §3–5 (`DECISIONS.md` D-01, D-02).
 
-**Key architecture decisions already locked (see `DECISIONS.md` for full list D-01 through D-17):**
+**Key architecture decisions already locked (see `DECISIONS.md` for full list D-01 through D-29):**
 - Modular monolith inside the existing Next.js repo (D-06, D-07), Tailwind scoped to new platform routes only (D-08), Prisma + Postgres/SQLite (D-09), NextAuth.js Credentials+JWT (D-10), enum-based RBAC (D-03), AI service layer provider-agnostic with a mock default — **no real LLM key required for a functional MVP** (D-11), deterministic features (Readiness Score, Entity Formation recommendation, Site Selection scoring) are never LLM-generated (D-04).
 
 ## 4. Phase 3 — Complete
@@ -97,6 +97,14 @@ All 6 generative features (`lib/modules/market-intelligence/insights/*`, `city-r
 **Two things worth knowing if you touch this module again:**
 1. `ai_insight_category` now has a 7th value, `partner_recommendation` (D-26) — `DATABASE_SCHEMA.md` itself never listed it; if you're cross-checking Prisma against that doc and something about partner recommendations looks missing there, this is why.
 2. **A real bug was found and fixed here, not in Milestone 1 where it was introduced:** `tailwind.config.js`'s `content` globs were stale from before the D-23 marketing-site/platform split (still pointed at `app/app/**` instead of `app/(platform)/app/**`), meaning Tailwind likely generated near-zero utility CSS for every page built in Milestones 2, 3, and 5 — functionally fine, visually broken. Fixed now; if anything from those earlier milestones still looks unstyled when actually viewed in a browser (not yet done in this session — all verification so far has been via curl/API, not a rendered browser check), rebuild and check `.next/static/css/*.css` for `tw-` rules the way this fix was verified.
+
+### Milestone 7 — Retail Expansion Intelligence: COMPLETE
+
+`lib/modules/expansion/{content,site-selection,roadmap,financial-projections}/`, `launch-tasks.service.ts`, `dashboard-aggregation.service.ts`. API under `app/api/v1/expansion/**` and `app/api/v1/dashboard`. UI at `app/(platform)/app/expansion/**` (overview, cities, cities/[cityId], malls/[mallId], sites, financial-projections, launch-tasks) plus the Milestone 1 placeholder dashboard now rendering real composed data via `components/platform/DashboardSummary.tsx`. Verified via build+lint+57 tests+live smoke test.
+**Three things worth knowing if you touch this module again:**
+1. `computeSiteScore` (`site-selection/scoring-engine.ts`) is the third pure/deterministic/unit-tested scoring function alongside the Readiness Score and City Recommendations (D-04) — reuses `scoreDistributionMaturity` from the Market Intelligence module rather than duplicating the maturity-level convention.
+2. **Real bugs found and fixed via live smoke test, not by inspection (D-27, D-28, D-29):** onboarding never created `RoadmapMilestone` rows for real orgs; the sites/launch-tasks routes' `.uuid()` Zod constraints rejected legitimate references to seed data's human-readable ids (e.g. `seed-mall-mumbai-phoenix`); `site_selection`'s roadmap status was missing an `in_progress` state that the other four milestones already had. All three fixed forward.
+3. Milestone 3's noted gap ("GST state registration auto-flagging depends on Milestone 7's `sites`") is now unblockable — `Site` rows exist — but the actual auto-flagging wire-up itself was not done in Milestone 7 (out of this milestone's US-40–46 scope); it remains open, now trackable against real `Site` data instead of a future dependency.
 
 **Credentials/infra genuinely not available in this environment (do not attempt to fabricate; work around per `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8, flag and continue rather than stopping):**
 - Production/staging PostgreSQL connection (use SQLite locally in the meantime).
