@@ -48,6 +48,11 @@ export const aiInsightCategorySchema = z.enum([
   'pricing_intelligence',
   'demand_forecast',
   'city_recommendation',
+  // DECISIONS.md D-26: added — DATABASE_SCHEMA.md's ai_insight_category enum
+  // omitted this even though FEATURE_SPECIFICATIONS.md §3.3 and
+  // API_SPECIFICATION.md §5 both describe AI Partner Recommendations using
+  // the exact same AI Output Standard envelope.
+  'partner_recommendation',
 ])
 export type AiInsightCategory = z.infer<typeof aiInsightCategorySchema>
 

@@ -2,6 +2,15 @@
 
 All notable changes to the Yorkstn project (research, product/architecture design, and implementation) are recorded here, most recent first. This complements `git log` with phase-level context; it does not replace commit messages.
 
+## Phase 4 — Implementation, Milestone 6: Partner Discovery Platform (2026-07-29)
+
+- Partner directory search (US-30) and brand-facing profile read (US-31) — the latter an explicit allow-list, never a conditional field strip, so `rejectionReason` and internal verification history can never leak to a brand.
+- AI Partner Recommendations (US-32): deterministic match scoring (city overlap with the org's own latest City Recommendation insight — a real cross-module read via `getLatestInsight`, plus verification status) merged with an AI narrative, mirroring City Recommendations' hybrid pattern. Required extending `ai_insight_category` with a `partner_recommendation` value that `DATABASE_SCHEMA.md` had omitted despite `FEATURE_SPECIFICATIONS.md`/`API_SPECIFICATION.md` both describing it (D-26).
+- Introduction requests (US-33): fixed state machine (`sent -> partner_viewed -> accepted|declined`), unit-tested.
+- Partner self-service profile + verification submission (US-34) and the Yorkstn Staff verification queue (US-35), in a fully separate partner-portal route group/root layout with its own auth context (`requirePartnerContext`) and a new `requireStaffSession` helper.
+- **Found and fixed a real, previously-undetected bug:** `tailwind.config.js`'s content globs still pointed at the pre-D-23 paths (`app/app/**`, `app/partner-portal/**`), not the actual `app/(platform)/**` route-group structure — meaning Tailwind had likely generated ~zero utility CSS for every page built since Milestone 2 (functionally correct, visually unstyled). Confirmed via the built CSS file before/after (96 `tw-` rules present after the fix) and via curl showing the rendered HTML's classes now have matching CSS.
+- Verified via build+lint+53 unit tests (7 new: introduction-request state machine, partner match scoring) + an extensive live smoke test: search returns only verified partners, introduction request sent and visible to both sides, partner submits for verification, staff rejects with a reason, partner sees the reason on their own profile, brand-side profile response has no `rejectionReason` key at all (confirmed by inspecting response keys directly), double-decision correctly rejected (409), and a partner session correctly denied brand-side API access with a clear error message (a small fix to `requireOrgContext` improved this from a confusing "complete onboarding" message).
+
 ## Phase 4 — Implementation, Milestone 5: AI Market Intelligence module (2026-07-27)
 
 - Shared `generateAndSaveInsight`/`getLatestInsight` path consuming Milestone 4's AI service layer, used by 5 near-identical features (market analysis, consumer insights, competitor intelligence, pricing intelligence, demand forecast) instead of duplicating persistence logic five times.

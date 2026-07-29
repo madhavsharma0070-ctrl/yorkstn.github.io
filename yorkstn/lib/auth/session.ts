@@ -26,6 +26,12 @@ export async function requireSession() {
  */
 export async function requireOrgContext(): Promise<OrgContext> {
   const session = await requireSession()
+  if (session.user.userType !== 'org_user') {
+    // Caught here (Milestone 6 smoke test) rather than falling through to
+    // the generic "no active organization" message below, which is
+    // confusing for a partner/staff session that will never have one.
+    throw new UnauthenticatedError('This action requires a brand organization account.')
+  }
   const organizationId = session.user.activeOrganizationId
   if (!organizationId) {
     throw new NotFoundError('No active organization selected. Complete onboarding first.')
@@ -43,4 +49,45 @@ export async function requireOrgContext(): Promise<OrgContext> {
     organizationId,
     role: membership.role as MembershipRole,
   }
+}
+
+/**
+ * Yorkstn Staff session (AUTH_RBAC.md §3). Partner verification is a
+ * platform-wide staff action, not org-scoped — `partners` is a shared
+ * directory (DECISIONS.md D-14), so unlike `requireOrgContext` this does
+ * not check a `staff_org_assignments` row. (Org-scoped staff actions, e.g.
+ * managed-services engagements, will add that check when Milestone 8
+ * builds them.)
+ */
+export async function requireStaffSession() {
+  const session = await requireSession()
+  if (session.user.userType !== 'yorkstn_staff') {
+    throw new UnauthenticatedError('Yorkstn Staff access required.')
+  }
+  return { userId: session.user.id }
+}
+
+export interface PartnerContext {
+  userId: string
+  partnerId: string
+}
+
+/**
+ * Partner-portal session (AUTH_RBAC.md §4). Resolves `session.userId ->
+ * partners.id` via the unique `User.partnerId` FK — every partner-portal
+ * route must call this first and scope all queries to the resolved
+ * `partnerId`, never accept one from the client.
+ */
+export async function requirePartnerContext(): Promise<PartnerContext> {
+  const session = await requireSession()
+  if (session.user.userType !== 'partner') {
+    throw new UnauthenticatedError('Partner access required.')
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { partnerId: true } })
+  if (!user?.partnerId) {
+    throw new NotFoundError('No partner profile linked to this account.')
+  }
+
+  return { userId: session.user.id, partnerId: user.partnerId }
 }

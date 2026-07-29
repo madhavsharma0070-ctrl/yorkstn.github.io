@@ -11,7 +11,7 @@ Following `docs/phase2/MVP_ROADMAP.md` / `docs/phase2/MILESTONES.md` sequencing:
 - [x] Milestone 3 — Compliance OS: remaining workflows (Import/GST/BIS/Trademark) + cross-workflow timeline (the timeline itself shipped workflow-type-agnostic in Milestone 2). Verified via build+lint+29 unit tests+live smoke test.
 - [x] Milestone 4 — AI service layer (provider-agnostic interface, mock provider, RAG scaffolding over seed corpus). No API/UI yet by design (Milestone 5 consumes it) — verified via build+lint+37 unit tests.
 - [x] Milestone 5 — AI Market Intelligence module (all 6 generative features + Readiness Score). Verified via build+lint+46 unit tests+live smoke test (real source-backed generation, deterministic city ranking, demand-forecast methodology label, readiness score driver math, RBAC 403/200).
-- [ ] Milestone 6 — Partner Discovery Platform (directory/search, partner portal, verification queue, introduction requests, AI recommendations).
+- [x] Milestone 6 — Partner Discovery Platform (directory/search, partner portal, verification queue, introduction requests, AI recommendations). Verified via build+lint+53 unit tests+live smoke test (search/introduce/verify/reject cycle, partner-brand isolation, rejection-reason visibility rule).
 - [ ] Milestone 7 — Retail Expansion Intelligence (city/mall intelligence, site selection, roadmap, financial projections, launch planning, Expansion Dashboard).
 - [ ] Milestone 8 — Managed Services + cross-cutting hardening (audit log sweep, full RBAC re-verification, provisioning-checklist review).
 - [ ] Update `PROJECT_MEMORY.md`, `CHANGELOG.md` at each milestone boundary, and after every work session regardless of milestone boundary.

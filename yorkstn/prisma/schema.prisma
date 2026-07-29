@@ -173,7 +173,7 @@ model Product {
 model AiInsight {
   id                String   @id @default(uuid())
   organizationId    String
-  category          String // market_analysis | consumer_insights | competitor_intelligence | pricing_intelligence | demand_forecast | city_recommendation
+  category          String // market_analysis | consumer_insights | competitor_intelligence | pricing_intelligence | demand_forecast | city_recommendation | partner_recommendation (D-26)
   cityId            String?
   inputParams       Json
   summary           String
