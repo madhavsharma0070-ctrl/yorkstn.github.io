@@ -4,6 +4,7 @@ import { requireOrgContext } from '@/lib/auth/session'
 import { requirePermission } from '@/lib/auth/rbac'
 import { withApiErrorHandling } from '@/lib/http/errors'
 import { createProjection, listProjections } from '@/lib/modules/expansion/financial-projections/projection.service'
+import { writeAuditLog } from '@/lib/audit'
 
 const lineItemSchema = z.object({
   label: z.string().min(1),
@@ -31,5 +32,15 @@ export const POST = withApiErrorHandling(async (req: NextRequest) => {
 
   const body = createSchema.parse(await req.json())
   const projection = await createProjection(ctx.organizationId, body)
+
+  await writeAuditLog({
+    organizationId: ctx.organizationId,
+    actorUserId: ctx.userId,
+    action: 'financial_projection.created',
+    entityType: 'financial_projection',
+    entityId: projection.id,
+    after: { horizonMonths: projection.horizonMonths },
+  })
+
   return NextResponse.json({ data: projection }, { status: 201 })
 })

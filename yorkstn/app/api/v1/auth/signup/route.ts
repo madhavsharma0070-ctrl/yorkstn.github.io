@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { hashPassword } from '@/lib/auth/password'
 import { withApiErrorHandling, ConflictError } from '@/lib/http/errors'
+import { writeAuditLog } from '@/lib/audit'
 
 const signupSchema = z.object({
   email: z.string().email(),
@@ -25,6 +26,14 @@ export const POST = withApiErrorHandling(async (req: NextRequest) => {
   const passwordHash = await hashPassword(body.password)
   const user = await prisma.user.create({
     data: { email, passwordHash, name: body.name, userType: 'org_user' },
+  })
+
+  await writeAuditLog({
+    actorUserId: user.id,
+    action: 'user.signed_up',
+    entityType: 'user',
+    entityId: user.id,
+    after: { email: user.email },
   })
 
   return NextResponse.json({ data: { id: user.id, email: user.email, name: user.name } }, { status: 201 })

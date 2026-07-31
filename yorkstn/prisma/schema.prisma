@@ -71,16 +71,19 @@ model User {
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
-  memberships              Membership[]
-  invitationsSent          Invitation[]          @relation("InvitedBy")
-  staffAssignments         StaffOrgAssignment[]
-  aiInsightsRequested      AiInsight[]
-  documentsCreated         Document[]
-  documentVersionsUploaded DocumentVersion[]     @relation("DocumentVersionUploadedBy")
-  partnerVerifications     PartnerVerification[]
-  introductionRequests     IntroductionRequest[]
-  notifications            Notification[]
-  auditLogs                AuditLog[]
+  memberships                        Membership[]
+  invitationsSent                    Invitation[]               @relation("InvitedBy")
+  staffAssignments                   StaffOrgAssignment[]
+  aiInsightsRequested                AiInsight[]
+  documentsCreated                   Document[]
+  documentVersionsUploaded           DocumentVersion[]          @relation("DocumentVersionUploadedBy")
+  partnerVerifications               PartnerVerification[]
+  introductionRequests               IntroductionRequest[]
+  notifications                      Notification[]
+  auditLogs                          AuditLog[]
+  managedServiceEngagementsRequested ManagedServiceEngagement[] @relation("ManagedServiceEngagementRequestedBy")
+  managedServiceEngagementsAssigned  ManagedServiceEngagement[] @relation("ManagedServiceEngagementAssignedStaff")
+  managedServiceUpdates              ManagedServiceUpdate[]
 
   @@map("users")
 }
@@ -571,19 +574,43 @@ model LaunchTask {
 model ManagedServiceEngagement {
   id                     String   @id @default(uuid())
   organizationId         String
+  requestedByUserId      String
   linkedComplianceItemId String?
   scope                  String
   status                 String   @default("requested") // requested | scoping | in_progress | delivered | cancelled
-  assignedStaffId        String?
-  notes                  String?
+  assignedStaffUserId    String?
+  deliverableUrl         String?
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
   organization         Organization            @relation(fields: [organizationId], references: [id])
+  requestedByUser      User                    @relation("ManagedServiceEngagementRequestedBy", fields: [requestedByUserId], references: [id])
+  assignedStaffUser    User?                   @relation("ManagedServiceEngagementAssignedStaff", fields: [assignedStaffUserId], references: [id])
   linkedComplianceItem ComplianceWorkflowItem? @relation(fields: [linkedComplianceItemId], references: [id])
+  updates              ManagedServiceUpdate[]
 
   @@index([organizationId])
+  @@index([assignedStaffUserId])
+  @@index([status])
   @@map("managed_service_engagements")
+}
+
+// Status/notes history so the brand always sees progress inside the
+// platform (AC US-50/51) — never a single mutable `notes` field, since the
+// brand needs to see the full timeline of updates, not just the latest one.
+model ManagedServiceUpdate {
+  id           String   @id @default(uuid())
+  engagementId String
+  authorUserId String
+  note         String
+  statusAtTime String // snapshot of engagement status when the note was posted
+  createdAt    DateTime @default(now())
+
+  engagement ManagedServiceEngagement @relation(fields: [engagementId], references: [id])
+  author     User                     @relation(fields: [authorUserId], references: [id])
+
+  @@index([engagementId, createdAt])
+  @@map("managed_service_updates")
 }
 
 // ============================================================

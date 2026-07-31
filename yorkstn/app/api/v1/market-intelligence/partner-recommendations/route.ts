@@ -4,6 +4,7 @@ import { requirePermission } from '@/lib/auth/rbac'
 import { withApiErrorHandling } from '@/lib/http/errors'
 import { getLatestInsight } from '@/lib/modules/market-intelligence/insight-generation.service'
 import { generatePartnerRecommendations } from '@/lib/modules/partners/recommendations/partner-matching.service'
+import { writeAuditLog } from '@/lib/audit'
 
 // GET /api/v1/market-intelligence/partner-recommendations — API_SPECIFICATION.md §5.
 // URL grouped under market-intelligence per the IA; the underlying service
@@ -20,5 +21,15 @@ export const POST = withApiErrorHandling(async () => {
   const ctx = await requireOrgContext()
   requirePermission(ctx.role, 'market_intelligence:generate')
   const insight = await generatePartnerRecommendations(ctx.organizationId, ctx.userId)
+
+  await writeAuditLog({
+    organizationId: ctx.organizationId,
+    actorUserId: ctx.userId,
+    action: 'ai_insight.generated',
+    entityType: 'ai_insight',
+    entityId: insight.id,
+    after: { category: insight.category },
+  })
+
   return NextResponse.json({ data: insight }, { status: 201 })
 })

@@ -143,3 +143,28 @@ Architecture/product decisions made across this build, in chronological order. E
 **Decision:** `milestone-auto-sync.ts`'s `site_selection` status is now `completed` (a site is `selected`), `in_progress` (at least one candidate site exists but none is `selected` yet), or `not_started` (no sites at all) — previously it was binary (`completed`/`not_started` only).
 **Why:** Found via live smoke test: creating and actively shortlisting candidate sites left the roadmap showing `site_selection: not_started`, inconsistent with how `entity_formation`, `compliance`, and `launch` all already modeled a three-state progression. A brand actively evaluating sites would see a misleadingly blank roadmap step.
 **See:** `yorkstn/lib/modules/expansion/roadmap/milestone-auto-sync.ts`.
+
+## D-30 — `ManagedServiceEngagement`/`ManagedServiceUpdate` schema corrected to match DATABASE_SCHEMA.md before any real engagement data existed
+**Decision:** Added `requestedByUserId`, renamed `assignedStaffId` → `assignedStaffUserId`, added `deliverableUrl`, and split status/notes history into a separate append-only `ManagedServiceUpdate` table (`engagementId`, `authorUserId`, `note`, `statusAtTime`) rather than a single mutable `notes` string on the engagement itself.
+**Why:** The Milestone 1-era placeholder schema was a simplified stand-in; `docs/phase2/DATABASE_SCHEMA.md` §1.7's actual design requires a full update history so the brand always sees the complete timeline of progress (AC US-50/51 — "without needing an external email/channel" implies more than one update over an engagement's life). Fixed forward, same D-24 precedent, before Milestone 8 built anything on top of the old shape — table was empty, zero data-loss risk.
+**See:** migration `20260731112221_managed_services_engagement_tracking`, `yorkstn/prisma/schema.prisma`.
+
+## D-31 — `isPlatformAdmin` is re-queried from the DB on every `requireStaffSession()` call, never trusted from the JWT
+**Decision:** `lib/auth/session.ts`'s `requireStaffSession()` now does a fresh `prisma.user.findUniqueOrThrow` for `isPlatformAdmin` on every call, returning it alongside `userId`.
+**Why:** `/admin/**` actions (assigning a Managed Services engagement to a staff member) must reflect a revoked or granted admin flag immediately, matching `requireOrgContext`'s existing "claims are re-validated against the DB, not trusted from a cached JWT" convention (AUTH_RBAC.md §1) — the JWT session claim never carried `isPlatformAdmin` in the first place (`types/next-auth.d.ts` only augments `userId`/`userType`/`activeOrganizationId`), so this isn't a behavior change so much as filling in the one piece Milestone 1 deferred, exactly as its own code comment anticipated ("Org-scoped staff actions... will add that check when Milestone 8 builds them").
+**See:** `yorkstn/lib/auth/session.ts`.
+
+## D-32 — Seeded `ananya.staff@yorkstn.com` as the demo's sole platform admin
+**Decision:** `prisma/seed.ts` now sets `isPlatformAdmin: true` on the one seeded Yorkstn Staff user.
+**Why:** Found while building the Managed Services assignment flow: with zero seeded platform admins, no engagement could ever be assigned to staff in the demo environment — the feature would be functionally dead on arrival for anyone exploring the seed data. AUTH_RBAC.md §3 already frames `is_platform_admin` as "just another permission a small number of staff accounts have," so making the sole demo staff account also the admin is the minimal, defensible seed choice.
+**See:** `yorkstn/prisma/seed.ts`.
+
+## D-33 — Completed the audit-log sweep across every mutating endpoint (US-61)
+**Decision:** Added `writeAuditLog` calls to every previously-missing mutating route: all 7 AI Market Intelligence `generate` endpoints plus readiness-score recalculation, all 5 Retail Expansion Intelligence routes left over from Milestone 7 (site status update, scoring-weight update, launch-task create/update, financial-projection create), the 3 partner-portal mutating routes (verification submission, introduction-request response, profile edit — using `organizationId: null` since a partner isn't tenant data), and signup (`organizationId: null`, actor is the new user). `session/active-organization` is the one deliberately-excluded route — it performs no database write at all, only a read-based authorization check.
+**Why:** Milestone 8's DONE WHEN is explicit and literal: "every mutating endpoint... writes an audit_logs row... verified by a test sweep across route handlers, not spot-checked ad hoc" (`docs/phase2/MILESTONES.md`). A `grep`-based sweep across every `route.ts` exporting `POST`/`PATCH`/`PUT`/`DELETE` found these gaps mechanically rather than by guessing which routes might be missing coverage.
+**See:** `yorkstn/lib/audit.ts`, the route files listed above.
+
+## D-34 — Added the CI workflow file `DEPLOYMENT_ARCHITECTURE.md` had only described
+**Decision:** Created `.github/workflows/ci.yml` (lint, unit tests, build) running entirely on the `mock` AI provider, local document storage, and a throwaway SQLite `DATABASE_URL` — no repository secrets required.
+**Why:** `DEPLOYMENT_ARCHITECTURE.md` §8 already listed CI as "deployable today, with zero new credentials," but no workflow file actually existed in the repo — a documentation claim that had outrun the implementation. Since Milestone 8 is explicitly the milestone for reviewing the credentials/infra checklist against what's "actually still mocked/stubbed," this gap was in scope to close rather than just flag.
+**See:** `.github/workflows/ci.yml`, `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8.

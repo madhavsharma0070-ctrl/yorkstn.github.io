@@ -4,6 +4,7 @@ import { requireOrgContext } from '@/lib/auth/session'
 import { requirePermission } from '@/lib/auth/rbac'
 import { withApiErrorHandling } from '@/lib/http/errors'
 import { listLaunchTasks, createLaunchTask } from '@/lib/modules/expansion/launch-tasks.service'
+import { writeAuditLog } from '@/lib/audit'
 
 const createSchema = z.object({
   title: z.string().min(1),
@@ -31,5 +32,15 @@ export const POST = withApiErrorHandling(async (req: NextRequest) => {
     dueAt: body.dueAt ? new Date(body.dueAt) : undefined,
     roadmapMilestoneId: body.roadmapMilestoneId,
   })
+
+  await writeAuditLog({
+    organizationId: ctx.organizationId,
+    actorUserId: ctx.userId,
+    action: 'launch_task.created',
+    entityType: 'launch_task',
+    entityId: task.id,
+    after: { title: task.title, dueAt: task.dueAt },
+  })
+
   return NextResponse.json({ data: task }, { status: 201 })
 })

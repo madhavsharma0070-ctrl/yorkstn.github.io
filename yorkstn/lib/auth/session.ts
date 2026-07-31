@@ -55,16 +55,24 @@ export async function requireOrgContext(): Promise<OrgContext> {
  * Yorkstn Staff session (AUTH_RBAC.md §3). Partner verification is a
  * platform-wide staff action, not org-scoped — `partners` is a shared
  * directory (DECISIONS.md D-14), so unlike `requireOrgContext` this does
- * not check a `staff_org_assignments` row. (Org-scoped staff actions, e.g.
- * managed-services engagements, will add that check when Milestone 8
- * builds them.)
+ * not check a `staff_org_assignments` row. Org-scoped staff actions (e.g.
+ * Managed Services engagements) check `isPlatformAdmin`/assignment
+ * themselves — see `lib/modules/managed-services/engagement.service.ts`.
+ * `isPlatformAdmin` is re-queried from the DB on every call (never trusted
+ * from a cached JWT claim), matching `requireOrgContext`'s "claims are
+ * re-validated against the DB" convention (AUTH_RBAC.md §1) — it gates
+ * `/admin/**` actions, so a revoked admin flag must take effect immediately.
  */
 export async function requireStaffSession() {
   const session = await requireSession()
   if (session.user.userType !== 'yorkstn_staff') {
     throw new UnauthenticatedError('Yorkstn Staff access required.')
   }
-  return { userId: session.user.id }
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: session.user.id },
+    select: { isPlatformAdmin: true },
+  })
+  return { userId: session.user.id, isPlatformAdmin: user.isPlatformAdmin }
 }
 
 export interface PartnerContext {

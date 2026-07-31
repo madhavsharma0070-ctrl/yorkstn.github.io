@@ -36,9 +36,20 @@ describe('RBAC permission matrix', () => {
     expect(can('viewer', 'market_intelligence:view')).toBe(true)
     expect(can('viewer', 'compliance:view')).toBe(true)
     expect(can('viewer', 'expansion:view')).toBe(true)
+    expect(can('viewer', 'managed_services:view')).toBe(true)
     expect(can('viewer', 'compliance:edit')).toBe(false)
     expect(can('viewer', 'expansion:edit')).toBe(false)
+    expect(can('viewer', 'managed_services:request')).toBe(false)
     expect(can('viewer', 'readiness_score:recalculate')).toBe(false)
+  })
+
+  it('managed_services:request is limited to owner/admin/compliance_manager; analyst_editor and viewer are read-only', () => {
+    expect(can('owner', 'managed_services:request')).toBe(true)
+    expect(can('admin', 'managed_services:request')).toBe(true)
+    expect(can('compliance_manager', 'managed_services:request')).toBe(true)
+    expect(can('analyst_editor', 'managed_services:request')).toBe(false)
+    expect(can('viewer', 'managed_services:request')).toBe(false)
+    expect(can('analyst_editor', 'managed_services:view')).toBe(true)
   })
 
   it('a null/undefined role has no permissions', () => {

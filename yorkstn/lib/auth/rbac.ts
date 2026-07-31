@@ -27,6 +27,7 @@ export type Permission =
   | 'partners:introduce'
   | 'expansion:view'
   | 'expansion:edit'
+  | 'managed_services:view'
   | 'managed_services:request'
   | 'notifications:own'
 
@@ -60,6 +61,7 @@ const MATRIX: Record<Permission, MembershipRole[]> = {
   'partners:introduce': ['owner', 'admin', 'analyst_editor'],
   'expansion:view': ALL_ROLES,
   'expansion:edit': ['owner', 'admin', 'analyst_editor'],
+  'managed_services:view': ALL_ROLES,
   'managed_services:request': ['owner', 'admin', 'compliance_manager'],
   'notifications:own': ALL_ROLES,
 }

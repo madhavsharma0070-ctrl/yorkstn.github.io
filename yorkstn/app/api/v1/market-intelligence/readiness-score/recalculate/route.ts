@@ -4,6 +4,7 @@ import { requireOrgContext } from '@/lib/auth/session'
 import { requirePermission } from '@/lib/auth/rbac'
 import { withApiErrorHandling } from '@/lib/http/errors'
 import { recalculateReadinessScore } from '@/lib/modules/market-intelligence/readiness-score/readiness-score.service'
+import { writeAuditLog } from '@/lib/audit'
 
 const bodySchema = z.object({
   hasSecuredBudget: z.boolean().default(false),
@@ -19,6 +20,15 @@ export const POST = withApiErrorHandling(async (req: NextRequest) => {
 
   const capitalInputs = bodySchema.parse(await req.json().catch(() => ({})))
   const score = await recalculateReadinessScore(ctx.organizationId, capitalInputs)
+
+  await writeAuditLog({
+    organizationId: ctx.organizationId,
+    actorUserId: ctx.userId,
+    action: 'readiness_score.recalculated',
+    entityType: 'expansion_readiness_score',
+    entityId: score.id,
+    after: { score: score.score },
+  })
 
   return NextResponse.json({ data: score }, { status: 201 })
 })

@@ -110,7 +110,7 @@ Per this project's discipline of flagging rather than fabricating access to infr
 - Local file-storage stub (or a local MinIO emulator) standing in for S3 during development.
 - Authentication flows against NextAuth.js + the local SQLite database.
 - Existing AWS SES-based email (already configured for the contact form) can be extended to platform notifications using the same existing credentials, if they remain valid — no new provisioning needed for this piece specifically.
-- CI (GitHub Actions lint/typecheck/test) — needs only a GitHub Actions runner, which is available by default on any GitHub repo.
+- CI (GitHub Actions lint/typecheck/test/build) — needs only a GitHub Actions runner, which is available by default on any GitHub repo. Implemented at `.github/workflows/ci.yml` (Milestone 8) — runs entirely on the `mock` AI provider, local document storage, and a throwaway SQLite file, so it needs zero repository secrets.
 
 ### Requires Yorkstn's team to provision new infrastructure/credentials
 

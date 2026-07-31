@@ -4,6 +4,7 @@ import { requireOrgContext } from '@/lib/auth/session'
 import { requirePermission } from '@/lib/auth/rbac'
 import { withApiErrorHandling } from '@/lib/http/errors'
 import { updateScoringWeights } from '@/lib/modules/expansion/site-selection/site.service'
+import { writeAuditLog } from '@/lib/audit'
 
 const weightsSchema = z.object({
   footfall: z.number().min(0).max(1),
@@ -20,5 +21,15 @@ export const PUT = withApiErrorHandling(async (req: NextRequest) => {
 
   const weights = weightsSchema.parse(await req.json())
   const sites = await updateScoringWeights(ctx.organizationId, weights)
+
+  await writeAuditLog({
+    organizationId: ctx.organizationId,
+    actorUserId: ctx.userId,
+    action: 'site_scoring_config.updated',
+    entityType: 'site_scoring_config',
+    entityId: ctx.organizationId,
+    after: { weights },
+  })
+
   return NextResponse.json({ data: sites })
 })

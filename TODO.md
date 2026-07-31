@@ -2,9 +2,9 @@
 
 Live action tracker. Check items off as completed; the first unchecked item is where the next session should resume (per `PROJECT_MEMORY.md` §6). Keep this file honest — do not check something off before it's actually done and committed.
 
-## Phase 4 — Implementation (in progress)
+## Phase 4 — Implementation (MVP complete — all 8 milestones shipped)
 
-Following `docs/phase2/MVP_ROADMAP.md` / `docs/phase2/MILESTONES.md` sequencing:
+Following `docs/phase2/MVP_ROADMAP.md` / `docs/phase2/MILESTONES.md` sequencing. All 4 modules (AI Market Intelligence, Compliance Operating System, Partner Discovery Platform, Retail Expansion Intelligence) plus Managed Services and cross-cutting hardening are now built, tested, and verified end-to-end on the `mock` AI provider + local SQLite — no real external credentials required for a fully functional demo (see `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8 for what remains genuinely mocked/stubbed pending production infrastructure).
 
 - [x] Milestone 1 — Platform Foundation (Prisma schema + SQLite dev DB, NextAuth.js credentials+JWT, RBAC helper + tests, org/brand-profile onboarding, seed script, empty-state dashboard, org switcher, sign-out). Verified via build+lint+unit tests+live smoke test (signup, login, RBAC 403/200, marketing site unaffected).
 - [x] Milestone 2 — Compliance OS: Entity Formation vertical slice (rules engine, document versioning, staleness indicator). Verified via build+lint+22 unit tests+live smoke test (recommendation generation, checklist creation, document upload with MIME-type validation, RBAC 403/200, tenant-scoped 404).
@@ -13,7 +13,7 @@ Following `docs/phase2/MVP_ROADMAP.md` / `docs/phase2/MILESTONES.md` sequencing:
 - [x] Milestone 5 — AI Market Intelligence module (all 6 generative features + Readiness Score). Verified via build+lint+46 unit tests+live smoke test (real source-backed generation, deterministic city ranking, demand-forecast methodology label, readiness score driver math, RBAC 403/200).
 - [x] Milestone 6 — Partner Discovery Platform (directory/search, partner portal, verification queue, introduction requests, AI recommendations). Verified via build+lint+53 unit tests+live smoke test (search/introduce/verify/reject cycle, partner-brand isolation, rejection-reason visibility rule).
 - [x] Milestone 7 — Retail Expansion Intelligence (city/mall intelligence, deterministic site-selection scoring, expansion roadmap with auto-synced milestones, financial projections, launch tasks, composed Expansion Dashboard). Verified via build+lint+57 unit tests+live smoke test (site creation against seeded non-UUID mall id, scoring-weight recompute, RBAC 403/200 for viewer, roadmap auto-sync reflecting real site/launch-task state, userAssumptions/platformBenchmarks kept structurally separate).
-- [ ] Milestone 8 — Managed Services + cross-cutting hardening (audit log sweep, full RBAC re-verification, provisioning-checklist review).
+- [x] Milestone 8 — Managed Services + cross-cutting hardening (engagement request/assignment/update flow, platform-admin-gated staff assignment, audit-log sweep across every mutating route, exhaustive RBAC re-verification, CI workflow added, credentials/infra checklist reviewed and confirmed accurate). Verified via build+lint+58 unit tests+live smoke test (RBAC matrix exactly matching AUTH_RBAC.md for request/view, platform-admin-only assignment, assigned-staff-only updates, brand-side visibility of staff updates, audit log page + RBAC on it, "Get expert help" link from Compliance).
 - [ ] Update `PROJECT_MEMORY.md`, `CHANGELOG.md` at each milestone boundary, and after every work session regardless of milestone boundary.
 
 ## Milestone 1 follow-ups (non-blocking, deferred)

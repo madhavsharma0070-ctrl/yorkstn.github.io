@@ -5,6 +5,7 @@ import { requirePermission } from '@/lib/auth/rbac'
 import { withApiErrorHandling } from '@/lib/http/errors'
 import { updateSite } from '@/lib/modules/expansion/site-selection/site.service'
 import { siteStatusSchema } from '@/lib/validation/enums'
+import { writeAuditLog } from '@/lib/audit'
 
 const updateSchema = z.object({
   status: siteStatusSchema.optional(),
@@ -24,6 +25,16 @@ export const PATCH = withApiErrorHandling(
 
     const body = updateSchema.parse(await req.json())
     const site = await updateSite(ctx.organizationId, params.id, body)
+
+    await writeAuditLog({
+      organizationId: ctx.organizationId,
+      actorUserId: ctx.userId,
+      action: 'site.updated',
+      entityType: 'site',
+      entityId: site.id,
+      after: { status: site.status, attributes: site.attributes },
+    })
+
     return NextResponse.json({ data: site })
   },
 )

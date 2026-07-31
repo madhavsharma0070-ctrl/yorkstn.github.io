@@ -46,6 +46,12 @@ export function AppShell({
           >
             Settings
           </Link>
+          <Link
+            href="/app/settings/audit-log"
+            className="tw-block tw-rounded tw-px-3 tw-py-2 tw-text-sm tw-text-gray-500 hover:tw-bg-gray-100"
+          >
+            Audit Log
+          </Link>
           <SignOutButton />
         </div>
       </aside>

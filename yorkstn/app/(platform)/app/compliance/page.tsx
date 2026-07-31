@@ -73,6 +73,7 @@ export default function ComplianceOverviewPage() {
               <th className="tw-py-2">Status</th>
               <th className="tw-py-2">Due</th>
               <th className="tw-py-2">Source</th>
+              <th className="tw-py-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -99,6 +100,14 @@ export default function ComplianceOverviewPage() {
                       {item.isStale ? 'source (needs re-verification)' : 'source'}
                     </a>
                   )}
+                </td>
+                <td className="tw-py-2">
+                  <Link
+                    href={`/app/managed-services?workflowItemId=${item.id}&workflowTitle=${encodeURIComponent(item.title)}`}
+                    className="tw-text-xs tw-text-gray-400 hover:tw-underline"
+                  >
+                    Get expert help
+                  </Link>
                 </td>
               </tr>
             ))}

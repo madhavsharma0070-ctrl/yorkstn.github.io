@@ -158,11 +158,20 @@ async function main() {
     })
   }
 
-  // ---- Yorkstn Staff (Ananya) — assigned to the demo org (AUTH_RBAC.md §3) ----
+  // ---- Yorkstn Staff (Ananya) — assigned to the demo org (AUTH_RBAC.md §3).
+  // Also the seed's sole platform admin (AUTH_RBAC.md §3's is_platform_admin
+  // flag) — without at least one seeded admin, Managed Services engagements
+  // could never be assigned to staff in the demo environment at all.
   const staffUser = await prisma.user.upsert({
     where: { email: 'ananya.staff@yorkstn.com' },
-    create: { email: 'ananya.staff@yorkstn.com', name: 'Ananya Sharma', passwordHash, userType: 'yorkstn_staff' },
-    update: {},
+    create: {
+      email: 'ananya.staff@yorkstn.com',
+      name: 'Ananya Sharma',
+      passwordHash,
+      userType: 'yorkstn_staff',
+      isPlatformAdmin: true,
+    },
+    update: { isPlatformAdmin: true },
   })
   await prisma.staffOrgAssignment.upsert({
     where: { userId_organizationId: { userId: staffUser.id, organizationId: org.id } },
@@ -218,7 +227,7 @@ async function main() {
   console.log(`Demo org: ${org.name} (${org.slug})`)
   console.log(`All demo users share the password: ${DEMO_PASSWORD}`)
   demoUsers.forEach((u) => console.log(`  - ${u.email} (${u.role})`))
-  console.log('  - ananya.staff@yorkstn.com (yorkstn_staff)')
+  console.log('  - ananya.staff@yorkstn.com (yorkstn_staff, platform admin)')
   console.log('  - rohan.partner@demo.yorkstn.com (partner)')
 }
 

@@ -15,7 +15,7 @@ A technology-first Market Entry Operating System (SaaS + optional managed servic
 | Phase 1 — Research | ✅ Complete | `research/*.md` (4 reports), synthesized in `BLUEPRINT.md` |
 | Phase 2 — Product & architecture design | ✅ Complete (20/20 docs) | `docs/phase2/*.md` |
 | Phase 3 — Per-module engineering specs | ✅ Complete (4/4 specs) | `docs/phase3/*.md` |
-| Phase 4 — Implementation (production MVP) | 🔄 In progress | `yorkstn/` (existing Next.js app) |
+| Phase 4 — Implementation (production MVP) | ✅ Complete (8/8 milestones) | `yorkstn/` (existing Next.js app) |
 
 ## 2. Phase 1 — Research (complete)
 
@@ -39,14 +39,14 @@ PRD, USER_STORIES, PERSONAS, INFORMATION_ARCHITECTURE, FEATURE_SPECIFICATIONS, A
 **Key approved assumptions (from the user, 2026-07-24 — treat as durable unless future validated research overrides them):**
 - ICP, business model, and 4-module MVP scope per `docs/phase2/PRD.md` §3–5 (`DECISIONS.md` D-01, D-02).
 
-**Key architecture decisions already locked (see `DECISIONS.md` for full list D-01 through D-29):**
+**Key architecture decisions already locked (see `DECISIONS.md` for full list D-01 through D-34):**
 - Modular monolith inside the existing Next.js repo (D-06, D-07), Tailwind scoped to new platform routes only (D-08), Prisma + Postgres/SQLite (D-09), NextAuth.js Credentials+JWT (D-10), enum-based RBAC (D-03), AI service layer provider-agnostic with a mock default — **no real LLM key required for a functional MVP** (D-11), deterministic features (Readiness Score, Entity Formation recommendation, Site Selection scoring) are never LLM-generated (D-04).
 
 ## 4. Phase 3 — Complete
 
 4 engineering specs in `docs/phase3/`: `ai-market-intelligence-engineering-spec.md`, `compliance-operating-system-engineering-spec.md`, `partner-discovery-engineering-spec.md`, `retail-expansion-intelligence-engineering-spec.md`. Each defines: exact `lib/modules/<name>/` internal file structure, which Prisma models the module owns (vs. reads cross-module via exported functions only — never raw cross-module Prisma queries, a hard rule established in these specs), exact API routes owned, and a test plan. The three deterministic-feature purity rules (Readiness Score, Entity Formation recommendation, Site Selection scoring — all pure functions, no I/O/AI calls, versioned) are consistently cross-referenced across all 4 specs from `DECISIONS.md` D-04.
 
-## 5. Phase 4 — Implementation (in progress)
+## 5. Phase 4 — Implementation (complete — MVP shipped, 8/8 milestones)
 
 Repo audit already done (§ below) — do not repeat it. Follow `docs/phase2/MVP_ROADMAP.md` milestone order; check off `TODO.md` as each lands.
 
@@ -106,7 +106,16 @@ All 6 generative features (`lib/modules/market-intelligence/insights/*`, `city-r
 2. **Real bugs found and fixed via live smoke test, not by inspection (D-27, D-28, D-29):** onboarding never created `RoadmapMilestone` rows for real orgs; the sites/launch-tasks routes' `.uuid()` Zod constraints rejected legitimate references to seed data's human-readable ids (e.g. `seed-mall-mumbai-phoenix`); `site_selection`'s roadmap status was missing an `in_progress` state that the other four milestones already had. All three fixed forward.
 3. Milestone 3's noted gap ("GST state registration auto-flagging depends on Milestone 7's `sites`") is now unblockable — `Site` rows exist — but the actual auto-flagging wire-up itself was not done in Milestone 7 (out of this milestone's US-40–46 scope); it remains open, now trackable against real `Site` data instead of a future dependency.
 
-**Credentials/infra genuinely not available in this environment (do not attempt to fabricate; work around per `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8, flag and continue rather than stopping):**
+### Milestone 8 — Managed Services + cross-cutting hardening: COMPLETE (final milestone — MVP done)
+
+`lib/modules/managed-services/engagement.service.ts`. API under `app/api/v1/managed-services/**` (brand-side) and `app/api/v1/admin/managed-services/**` (staff-side). UI at `app/(platform)/app/managed-services` (brand) and `app/(platform)/app/admin/managed-services` (staff, no `AppShell` — same bare-container pattern as the Milestone 6 partner-verification queue) plus a new `app/(platform)/app/settings/audit-log` page. CI added at `.github/workflows/ci.yml`. Verified via build+lint+58 tests+live smoke test.
+**Four things worth knowing if you touch this module again:**
+1. Assignment is platform-admin-only (`requireStaffSession()` now returns a DB-fresh `isPlatformAdmin`, D-31); posting an update requires being the specifically-assigned staff member (or a platform admin). Both enforced inside `engagement.service.ts`, not just at the route layer, and both were live-tested with a second, non-admin staff user created directly via the Prisma client for the test then deleted.
+2. **Seed data gotcha (D-32):** `ananya.staff@yorkstn.com` is the only seeded Yorkstn Staff user and is now also the only seeded platform admin — if you ever add a second staff user to the seed, decide deliberately whether they should also be an admin; don't assume it.
+3. **The audit-log sweep (D-33) is complete as of this milestone** — every mutating route in the entire product writes an audit log except `session/active-organization` (no DB write at all). If you add a new mutating route in the future, add `writeAuditLog` to it in the same PR — the mechanical `grep -L writeAuditLog $(routes exporting POST/PATCH/PUT/DELETE)` sweep technique used to find the Milestone 8 gaps is quick to re-run and worth doing again before any future release claiming this property.
+4. **CI now actually exists** (`.github/workflows/ci.yml`, D-34) — `DEPLOYMENT_ARCHITECTURE.md` had described it as "deployable today" for milestones, but no workflow file existed until this one. It runs lint/test/build on every push/PR using the `mock` AI provider and a throwaway SQLite file — zero repository secrets required.
+
+**Credentials/infra genuinely not available in this environment (do not attempt to fabricate; work around per `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8, flag and continue rather than stopping) — reviewed and confirmed still accurate as of Milestone 8, the milestone whose DONE WHEN explicitly calls for this review:**
 - Production/staging PostgreSQL connection (use SQLite locally in the meantime).
 - AWS S3 bucket + IAM credentials for document storage (stub/local-filesystem or documented no-op in the meantime).
 - Real `NEXTAUTH_SECRET` per environment beyond a local dev value.
@@ -119,4 +128,4 @@ All 6 generative features (`lib/modules/market-intelligence/insights/*`, `city-r
 1. Read this file fully.
 2. Skim `BLUEPRINT.md`, `DECISIONS.md`, `CHANGELOG.md`, `TODO.md`.
 3. Check `git log --oneline` and `git status` against the "Phase status" table above — if a doc/file this memory claims exists is missing, or vice versa, trust the actual repo state and correct this file first.
-4. Resume at the first unchecked item in `TODO.md`.
+4. Resume at the first unchecked item in `TODO.md`. **As of Milestone 8, the MVP itself is complete (8/8 milestones, all 4 modules + Managed Services + hardening) — there is no Milestone 9 in any doc.** Remaining unchecked `TODO.md` items are the Milestone 1 follow-ups (non-blocking UX polish) and the standing pre-launch items (primary-source re-verification, credentials provisioning, customer-discovery validation) — do not invent new scope beyond what `docs/phase2/MVP_ROADMAP.md`/`MILESTONES.md` actually specify.
