@@ -63,7 +63,7 @@ Build order for Phase 4 (from `docs/phase2/MVP_ROADMAP.md`): Milestone 1 (Platfo
 ### Milestone 1 — Platform Foundation: COMPLETE
 
 All DoD items met (verified via `npm run build`, `npm run lint`, `npm test`, and a live smoke test with curl: signup, login, session, RBAC 403 vs 200, marketing site unaffected). Key files for a fresh session to orient from:
-- `yorkstn/prisma/schema.prisma` — full data model, all 4 modules (only Milestone 1's tables are populated with real routes so far; the rest exist in the schema ready for Milestones 2–7).
+- `yorkstn/prisma/schema.prisma` — full data model, all 4 modules. As of Milestone 8 every table has real API routes and UI built against it (Milestone 1 shipped only the identity/org tables' routes; Milestones 2–8 built out the rest — see each milestone's section below).
 - `yorkstn/auth.ts` — NextAuth.js v5 config. **Gotcha already solved, don't re-debug it:** `next-auth/jwt`'s `JWT` type is a re-export of `@auth/core/jwt`'s — module augmentation must target `@auth/core/jwt` directly (see `yorkstn/types/next-auth.d.ts`) or `token.*` fields silently type as `unknown`.
 - `yorkstn/lib/auth/rbac.ts` — the permission matrix, single source of enforcement truth, unit-tested in `rbac.test.ts`.
 - `yorkstn/lib/auth/session.ts` — `requireSession()`/`requireOrgContext()`, used by every API route.
@@ -79,7 +79,7 @@ Deterministic rules engine (`lib/modules/compliance/entity-formation/rules-engin
 ### Milestone 3 — Compliance OS: remaining workflows: COMPLETE
 
 Import (`lib/modules/compliance/import/`), BIS (shares the same HSN lookup), GST (`app/api/v1/compliance/gst/states`), Trademark (`lib/modules/compliance/trademark/`). All four have UI pages under `app/(platform)/app/compliance/{import,bis,gst,trademark}`. The cross-workflow timeline (`/app/compliance`, `/api/v1/compliance/overview`) already aggregated all workflow types since Milestone 2 built it type-agnostic — no additional work needed there.
-**Known, documented (not silent) gap:** GST state registration is added manually; auto-flagging from the org's site/warehouse footprint depends on Retail Expansion Intelligence's `sites` (Milestone 7), noted inline in `app/api/v1/compliance/gst/states/route.ts`'s docstring — wire this up when Milestone 7 lands.
+**Known, documented (not silent) gap — still open as of MVP completion:** GST state registration is added manually; auto-flagging from the org's site/warehouse footprint depends on Retail Expansion Intelligence's `sites`, noted inline in `app/api/v1/compliance/gst/states/route.ts`'s docstring. Milestone 7 (which built `sites`) has since landed and made this unblockable, but the actual auto-flagging wire-up was explicitly out of that milestone's US-40–46 scope and was not done — see Milestone 7's section below, point 3. This is a real, tracked, non-blocking post-MVP follow-up, not something Milestone 7 silently resolved.
 
 ### Milestone 4 — AI Service Layer: COMPLETE
 

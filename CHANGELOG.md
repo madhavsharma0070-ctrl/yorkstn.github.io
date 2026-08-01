@@ -2,7 +2,7 @@
 
 All notable changes to the Yorkstn project (research, product/architecture design, and implementation) are recorded here, most recent first. This complements `git log` with phase-level context; it does not replace commit messages.
 
-## Phase 4 — Implementation, Milestone 8: Managed Services + cross-cutting hardening (2026-07-31)
+## Phase 4 — Implementation, Milestone 8: Managed Services + cross-cutting hardening (2026-07-31) — MVP complete
 
 - Managed Services (US-50/51): brand-side request/tracking (`/app/managed-services`), a Yorkstn Staff triage queue (`/app/admin/managed-services`) where a platform admin assigns a staff member — the exact moment a `staff_org_assignments` row is created for that org (AUTH_RBAC.md §3) — and only the assigned staff member (or a platform admin) may post status/note updates, each appended to a separate `ManagedServiceUpdate` history table so the brand always sees the full timeline in-platform, never an off-platform channel. A "Get expert help" link on each Compliance workflow item prefills a request scoped to that task.
 - Corrected the `ManagedServiceEngagement` schema to match `DATABASE_SCHEMA.md` before any real data existed (`requestedByUserId`, `assignedStaffUserId`, `deliverableUrl`, the separate `ManagedServiceUpdate` table) — D-30.
