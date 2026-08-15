@@ -1,0 +1,36 @@
+# Yorkstn — TODO
+
+Live action tracker. Check items off as completed; the first unchecked item is where the next session should resume (per `PROJECT_MEMORY.md` §6). Keep this file honest — do not check something off before it's actually done and committed.
+
+## Phase 4 — Implementation (MVP complete — all 8 milestones shipped)
+
+Following `docs/phase2/MVP_ROADMAP.md` / `docs/phase2/MILESTONES.md` sequencing. All 4 modules (AI Market Intelligence, Compliance Operating System, Partner Discovery Platform, Retail Expansion Intelligence) plus Managed Services and cross-cutting hardening are now built, tested, and verified end-to-end on the `mock` AI provider + local SQLite — no real external credentials required for a fully functional demo (see `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8 for what remains genuinely mocked/stubbed pending production infrastructure).
+
+- [x] Milestone 1 — Platform Foundation (Prisma schema + SQLite dev DB, NextAuth.js credentials+JWT, RBAC helper + tests, org/brand-profile onboarding, seed script, empty-state dashboard, org switcher, sign-out). Verified via build+lint+unit tests+live smoke test (signup, login, RBAC 403/200, marketing site unaffected).
+- [x] Milestone 2 — Compliance OS: Entity Formation vertical slice (rules engine, document versioning, staleness indicator). Verified via build+lint+22 unit tests+live smoke test (recommendation generation, checklist creation, document upload with MIME-type validation, RBAC 403/200, tenant-scoped 404).
+- [x] Milestone 3 — Compliance OS: remaining workflows (Import/GST/BIS/Trademark) + cross-workflow timeline (the timeline itself shipped workflow-type-agnostic in Milestone 2). Verified via build+lint+29 unit tests+live smoke test.
+- [x] Milestone 4 — AI service layer (provider-agnostic interface, mock provider, RAG scaffolding over seed corpus). No API/UI yet by design (Milestone 5 consumes it) — verified via build+lint+37 unit tests.
+- [x] Milestone 5 — AI Market Intelligence module (all 6 generative features + Readiness Score). Verified via build+lint+46 unit tests+live smoke test (real source-backed generation, deterministic city ranking, demand-forecast methodology label, readiness score driver math, RBAC 403/200).
+- [x] Milestone 6 — Partner Discovery Platform (directory/search, partner portal, verification queue, introduction requests, AI recommendations). Verified via build+lint+53 unit tests+live smoke test (search/introduce/verify/reject cycle, partner-brand isolation, rejection-reason visibility rule).
+- [x] Milestone 7 — Retail Expansion Intelligence (city/mall intelligence, deterministic site-selection scoring, expansion roadmap with auto-synced milestones, financial projections, launch tasks, composed Expansion Dashboard). Verified via build+lint+57 unit tests+live smoke test (site creation against seeded non-UUID mall id, scoring-weight recompute, RBAC 403/200 for viewer, roadmap auto-sync reflecting real site/launch-task state, userAssumptions/platformBenchmarks kept structurally separate).
+- [x] Milestone 8 — Managed Services + cross-cutting hardening (engagement request/assignment/update flow, platform-admin-gated staff assignment, audit-log sweep across every mutating route, exhaustive RBAC re-verification, CI workflow added, credentials/infra checklist reviewed and confirmed accurate). Verified via build+lint+58 unit tests+live smoke test (RBAC matrix exactly matching AUTH_RBAC.md for request/view, platform-admin-only assignment, assigned-staff-only updates, brand-side visibility of staff updates, audit log page + RBAC on it, "Get expert help" link from Compliance).
+- [ ] Update `PROJECT_MEMORY.md`, `CHANGELOG.md` at each milestone boundary, and after every work session regardless of milestone boundary.
+
+## Milestone 1 follow-ups (non-blocking, deferred)
+
+- [ ] Wire invitation emails through the existing AWS SES integration (`app/api/enquiry/route.ts` already has a working SES client) — invitations are fully functional today via their direct `/app/invite/:token` link, shown/copyable in the Members UI, so this is a UX polish item, not a functional gap.
+- [ ] Add an automated integration test asserting a session's active-organization claim can't be set to an org the caller isn't a member of (verified manually via live smoke test during Milestone 1; not yet covered by an automated test since it needs a seeded test DB, not just pure-function unit tests).
+
+## Standing items (ongoing, not phase-bound)
+
+- [ ] Re-verify the Phase 1 research figures listed in `docs/phase2/VALIDATION_PLAN.md` §4 against live `.gov.in` primary sources before any are surfaced as authoritative Compliance OS content to a real customer.
+- [ ] Before production launch: provision the credentials/infra listed in `docs/phase2/DEPLOYMENT_ARCHITECTURE.md` §8 and `PROJECT_MEMORY.md` §5 (Postgres, S3, `NEXTAUTH_SECRET`, optionally a real LLM key, Sentry). None of these block MVP functionality on the `mock` AI provider + SQLite.
+- [ ] Run the customer-discovery and design-partner-pilot validation described in `docs/phase2/VALIDATION_PLAN.md` §1–3 once the MVP is demoable, to test (not assume) the core "integrated platform" hypothesis.
+
+## Completed
+
+- [x] Phase 1 — Research (4 reports + `BLUEPRINT.md` synthesis), approved by user 2026-07-24.
+- [x] Phase 2 — Product & Architecture Design (20/20 docs in `docs/phase2/`).
+- [x] Top-level tracking docs created: `PROJECT_MEMORY.md`, `DECISIONS.md`, `CHANGELOG.md`, `TODO.md`, `BLUEPRINT.md` §8 addendum.
+- [x] Existing `yorkstn/` Next.js repo audited for Phase 4 reuse/migration planning.
+- [x] Phase 3 — Per-module engineering specs (4/4 in `docs/phase3/`).

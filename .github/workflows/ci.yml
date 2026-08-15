@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-lint-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: yorkstn
+    env:
+      # Zero real credentials needed — mirrors the project's "deployable
+      # today with zero new credentials" design goal (DEPLOYMENT_ARCHITECTURE.md
+      # §8). DATABASE_URL only needs to be a resolvable path for `prisma
+      # generate`/Next's build-time type-checking; no test or the build
+      # itself queries a live database (unit tests are pure-function only).
+      DATABASE_URL: 'file:./dev.db'
+      NEXTAUTH_SECRET: 'ci-only-insecure-secret'
+      NEXTAUTH_URL: 'http://localhost:3000'
+      AI_PROVIDER: mock
+      DOCUMENT_STORAGE_PROVIDER: local
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: yorkstn/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
